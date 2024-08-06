@@ -1,0 +1,12 @@
+db.sqlite3
+venv/
+.venv
+.env
+.env.dev
+.env.database
+.env.prod
+__pycache__
+
+media
+node_modules
+staticfiles

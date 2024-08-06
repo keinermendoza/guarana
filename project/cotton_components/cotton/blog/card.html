@@ -1,0 +1,26 @@
+<article class="group flex rounded max-w-sm flex-col overflow-hidden border border-zinc-300 bg-zinc-100 text-neutral-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+    <div class="h-44 md:h-64 overflow-hidden">
+        {% if image %}
+        <img src="{{image.url}}" class="object-cover transition duration-700 ease-out group-hover:scale-105" 
+        alt="{{title}}" />
+        {% endif %}
+    </div>
+    <div class="flex flex-col gap-4 p-6">
+        <h3 class="text-balance text-xl lg:text-2xl font-bold text-neutral-900 dark:text-zinc-50" aria-describedby="tripDescription">
+            {{title}}
+        </h3>
+        <p id="tripDescription" class="text-pretty text-sm mb-2">
+            {{preview}}
+        </p>
+        <div class="flex items-center gap-1 font-medium">
+            {% for topic in topics %}
+            <span class="w-fit bg-sky-700 px-2 py-1 text-xs text-white dark:bg-sky-600 dark:text-white rounded">{{topic.name}}</span>
+            {% endfor %}
+        </div>
+        <a 
+            href={{href}}
+            class="cursor-pointer whitespace-nowrap bg-sky-700 px-4 py-2 text-center text-sm font-medium tracking-wide text-white transition hover:opacity-75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700 active:opacity-100 active:outline-offset-0 dark:bg-sky-600 dark:text-white dark:focus-visible:outline-sky-600 rounded"> 
+            Ver Publicaión    
+        </a>
+    </div>
+</article>
