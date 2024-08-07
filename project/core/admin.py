@@ -21,7 +21,7 @@ from unfold.admin import (
 
 @admin.register(TipoGuarana)
 class TipoGuaranaAdmin(ModelAdmin):
-    pass
+   pass
 
 @admin.register(MetodoPago)
 class MetodoPagoAdmin(ModelAdmin):
@@ -35,20 +35,44 @@ class SacoAdmin(ModelAdmin):
 class ProductoAdmin(ModelAdmin):
     pass
 
-@admin.register(Ralada)
-class RaladaAdmin(ModelAdmin):
-    pass
+class RaladaInline(StackedInline):
+    model = Ralada
+    tab = True
 
 class ProduccionDetalleInline(TabularInline):
     model = ProduccionDetalle
+    
 
 @admin.register(Produccion)
 class ProduccionAdmin(ModelAdmin):
-    inlines = [ProduccionDetalleInline]
+    fieldsets = (
+        ("Producción", {
+            'fields': ('consumo', 'nota')
+        }),
+    )
+  
+    inlines = [RaladaInline, ProduccionDetalleInline]
+
+    readonly_fields = ('fecha_registro',)
+
+    list_display = ('__str__', 'consumo', 'fecha_registro')
+    search_fields = ('nota',)
+    
 
 class VentaItemInline(TabularInline):
     model = VentaItem
 
 @admin.register(Venta)
 class VentaAdmin(ModelAdmin):
+    filter_horizontal = ["metodo_pago"]
     inlines = [VentaItemInline]
+
+    fieldsets = (
+        ("Venta", {
+            'fields': ('total', 'metodo_pago')
+        }),
+        ('Extras', {
+            'fields': ['fecha_venta', 'nota'],
+            'classes': ('collapse',)
+        }),
+    )
