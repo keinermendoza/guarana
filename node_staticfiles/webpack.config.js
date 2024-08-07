@@ -17,9 +17,9 @@ module.exports = {
     entry: {
         vendor: './src/vendor.js',
         admin: './src/admin.js',
-        expression_list: './src/expression_list.js',
-        blog: './src/blog.js',
-        editor_react: './src/react/editor_app.jsx',
+        // expression_list: './src/expression_list.js',
+        // blog: './src/blog.js',
+        // editor_react: './src/react/editor_app.jsx',
     },
     output: {
         'path': path.resolve(path.dirname(__dirname), 'project', 'staticfiles', 'js'),

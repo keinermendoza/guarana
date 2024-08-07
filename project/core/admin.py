@@ -1,30 +1,54 @@
 from django import forms
 from django.db import models
 from django.contrib import admin
-# from .models import (
+from .models import (
+    TipoGuarana,
+    Saco,
+    MetodoPago,
+    Producto,
+    Ralada,
+    Produccion,
+    ProduccionDetalle,
+    Venta,
+    VentaItem,
+)
 
-# )
-# from unfold.admin import (
-#     ModelAdmin,
-#     TabularInline
-# ) 
-# from unfold.contrib.forms.widgets import ArrayWidget, WysiwygWidget
+from unfold.admin import (
+    ModelAdmin,
+    TabularInline,
+    StackedInline
+) 
 
+@admin.register(TipoGuarana)
+class TipoGuaranaAdmin(ModelAdmin):
+    pass
 
-# class ProjectImageInline(TabularInline):
-#     model = ProjectImage
+@admin.register(MetodoPago)
+class MetodoPagoAdmin(ModelAdmin):
+    pass
 
-# @admin.register(Project)
-# class ProjectAdmin(ModelAdmin):
-#     inlines = [ProjectImageInline]
+@admin.register(Saco)
+class SacoAdmin(ModelAdmin):
+    pass
 
-#     # formfield_overrides = {
-#     #     models.TextField: {
-#     #         "widget": WysiwygWidget,
-#     #     }
-#     # }
+@admin.register(Producto)
+class ProductoAdmin(ModelAdmin):
+    pass
 
-# @admin.register(Testimonial)
-# class TestimonialAdmin(ModelAdmin):
-#     pass
+@admin.register(Ralada)
+class RaladaAdmin(ModelAdmin):
+    pass
 
+class ProduccionDetalleInline(TabularInline):
+    model = ProduccionDetalle
+
+@admin.register(Produccion)
+class ProduccionAdmin(ModelAdmin):
+    inlines = [ProduccionDetalleInline]
+
+class VentaItemInline(TabularInline):
+    model = VentaItem
+
+@admin.register(Venta)
+class VentaAdmin(ModelAdmin):
+    inlines = [VentaItemInline]

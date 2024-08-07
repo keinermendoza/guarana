@@ -20,7 +20,7 @@ services:
   db:
     image: postgres:16-bullseye
     volumes:
-      - new_homesite_data_dev:/var/lib/postgresql/data/
+      - guaranda_data_dev:/var/lib/postgresql/data/
     environment:
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
@@ -28,4 +28,4 @@ services:
     ports:
       - 5431:5432
 volumes:
-  new_homesite_data_dev:
+  guaranda_data_dev:
