@@ -209,3 +209,86 @@ CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq:5672/'
 
 # # Url
 ROOT_URLCONF = os.environ.get('ROOT_URLCONF', 'config.urls')
+
+
+UNFOLD = {
+    "SITE_HEADER": _("Loja de Guaraná Admin"),
+    "SITE_TITLE": _("Loja de Guaraná"),
+    "SITE_SYMBOL": "settings",
+    # "SHOW_HISTORY": True,
+    "DASHBOARD_CALLBACK": "core.admin_utils.get_extra_context",
+    "SIDEBAR": {
+        "show_search": False,  # Search in applications and models names
+        "show_all_applications": False,  # Dropdown with all applications and models
+        "navigation": [
+            {
+                "title": _("Registrar"),
+                "separator": True,  # Top border
+                "items": [
+                    {
+                        "title": "Vendas",
+                        "icon": "store",  # Supported icon set: https://fonts.google.com/icons
+                        "link": reverse_lazy("admin:core_venta_add"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                    {
+                        "title": "Produção",
+                        "icon": "factory",  # Supported icon set: https://fonts.google.com/icons
+                        "link": reverse_lazy("admin:core_produccion_add"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                ],
+            },
+            {
+                "title": _("Ver Registros"),
+                "separator": True,  # Top border
+                # "collapsible": True,  # Collapsible group of links
+                "items": [
+                    {
+                        "title": "Vendas",
+                        "icon": "store",  # Supported icon set: https://fonts.google.com/icons
+                        "link": reverse_lazy("admin:core_venta_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                    {
+                        "title": "Produção",
+                        "icon": "factory",  # Supported icon set: https://fonts.google.com/icons
+                        "link": reverse_lazy("admin:core_produccion_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                ],
+            },
+            {
+                "title": _("Modelos"),
+                "separator": True,  # Top border
+                "collapsible": True,  # Collapsible group of links
+                "items": [
+                    {
+                        "title": "Tipos de Guaraná",
+                        "icon": "local_cafe",  # Supported icon set: https://fonts.google.com/icons
+                        "link": reverse_lazy("admin:core_tipoguarana_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                    {
+                        "title": "Metodos de Pago",
+                        "icon": "add_card",  # Supported icon set: https://fonts.google.com/icons
+                        "link": reverse_lazy("admin:core_metodopago_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                    {
+                        "title": "Sacos",
+                        "icon": "inventory_2",  # Supported icon set: https://fonts.google.com/icons
+                        "link": reverse_lazy("admin:core_saco_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                    {
+                        "title": "Produtos",
+                        "icon": "shopping_cart",  # Supported icon set: https://fonts.google.com/icons
+                        "link": reverse_lazy("admin:core_producto_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                ],
+            },
+        ],
+    },
+}

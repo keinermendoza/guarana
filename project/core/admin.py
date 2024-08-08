@@ -13,6 +13,8 @@ from .models import (
     VentaItem,
 )
 
+from .admin_forms import InlineRaladaForm
+
 from unfold.admin import (
     ModelAdmin,
     TabularInline,
@@ -37,6 +39,7 @@ class ProductoAdmin(ModelAdmin):
 
 class RaladaInline(StackedInline):
     model = Ralada
+    form = InlineRaladaForm
     tab = True
 
 class ProduccionDetalleInline(TabularInline):
@@ -57,6 +60,7 @@ class ProduccionAdmin(ModelAdmin):
 
     list_display = ('__str__', 'consumo', 'fecha_registro')
     search_fields = ('nota',)
+    
     
 
 class VentaItemInline(TabularInline):

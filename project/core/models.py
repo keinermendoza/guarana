@@ -97,7 +97,7 @@ class Ralada(models.Model):
 
     numero = models.PositiveIntegerField(blank=True, null=True)
     cantidad_bastones = models.PositiveIntegerField(blank=True, null=True)
-    saco = models.ForeignKey(Saco, related_name="raladas", on_delete=models.PROTECT)
+    saco = models.ForeignKey(Saco, related_name="ralada", on_delete=models.SET_NULL, blank=True, null=True)
     peso_inicial = models.PositiveIntegerField(blank=True, null=True)
     sobra_inicial = models.PositiveIntegerField(blank=True, null=True)
     sobra_final = models.PositiveIntegerField(blank=True, null=True)
@@ -117,7 +117,7 @@ class Ralada(models.Model):
         return self.sobra_final - self.sobra_final
     
     def __str__(self):
-        return f'Ralada {self.numero} - {self.saco} - {self.tipo_guarana.nombre}'
+        return f'Ralada {self.numero} - {self.saco}'
 
 class ProduccionDetalle(models.Model):
     produccion = models.ForeignKey(Produccion, related_name="detalles", on_delete=models.CASCADE)
