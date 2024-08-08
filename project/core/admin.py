@@ -48,6 +48,7 @@ class ProduccionDetalleInline(TabularInline):
 
 @admin.register(Produccion)
 class ProduccionAdmin(ModelAdmin):
+    change_form_template = "admin/change_form.html"
     fieldsets = (
         ("Producción", {
             'fields': ('consumo', 'nota')
@@ -60,6 +61,25 @@ class ProduccionAdmin(ModelAdmin):
 
     list_display = ('__str__', 'consumo', 'fecha_registro')
     search_fields = ('nota',)
+
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+
+    # def change_view(self, request, object_id, form_url="", extra_context=None):
+        """
+        adds the endpoints for handle upload/delete related images to context
+        in the custom 'change_form_template' 
+        this scripts are loadded by 'js/admin.js'
+        """
+        extra_context = extra_context or {}
+        extra_context.update({
+            "put_first_ralada_tab": True
+        })
+        return super().changeform_view(
+            request,
+            object_id,
+            form_url,
+            extra_context=extra_context,
+        )
     
     
 
