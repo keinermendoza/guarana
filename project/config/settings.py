@@ -32,9 +32,9 @@ INSTALLED_APPS = [
     'core',
     'api',
     'django_htmx',
-    'django_filters',
-    'django_extensions',
-    'rest_framework',
+    # 'django_filters',
+    # 'django_extensions',
+    # 'rest_framework',
 
 ]
 SITE_ID = 1
