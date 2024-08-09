@@ -3,7 +3,8 @@ from pathlib import Path
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 
-
+from dotenv import load_dotenv
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -176,10 +177,10 @@ REST_FRAMEWORK = {
 # Database
 DATABASES = {
     'default': {
-        'ENGINE': "django.db.backends.postgresql",
+        'ENGINE': os.environ.get('ENGINE', 'django.db.backends.sqlite3'),
         'HOST': os.environ.get('SQL_HOST'),
         'USER': os.environ.get('USER'),
-        'NAME': os.environ.get('NAME'),
+        'NAME': os.environ.get('NAME',  BASE_DIR / 'db.sqlite3'),
         'PASSWORD': os.environ.get('PASSWORD'),
         'PORT': os.environ.get('SQL_PORT'),
     }

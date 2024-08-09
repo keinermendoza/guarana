@@ -1,6 +1,7 @@
 
 from django.db import models
 from django.utils import timezone as tz
+
 class TipoGuarana(models.Model):
     nombre = models.CharField(max_length=100)
 
@@ -25,6 +26,8 @@ class MetodoPago(models.Model):
 class Producto(models.Model):
     nombre = models.CharField(max_length=200)
     descripcion = models.TextField(blank=True, null=True)
+    precio = models.DecimalField(max_digits=10, decimal_places=2, blank=True)
+
     
     def __str__(self) -> str:
         return self.nombre
@@ -38,13 +41,20 @@ class Venta(models.Model):
 
     class Meta:
         verbose_name = "Venta"
-        verbose_name_plural = "- Ventas"
+        verbose_name_plural = "Ventas"
+
+    @property
+    def fecha_venta_corta(self) -> str:
+        return self.fecha_venta.strftime("%d/%m/%Y")
+    
+    def __str__(self) -> str:
+        return f"R$ {self.total} dia {self.fecha_venta_corta}"
 
 class VentaItem(models.Model):
     venta = models.ForeignKey(Venta, related_name='items', on_delete=models.CASCADE)
     producto = models.ForeignKey(Producto, related_name='detalles', on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
-    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    precio = models.DecimalField(max_digits=10, decimal_places=2, blank=True)
     fecha_registro = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:

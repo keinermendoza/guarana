@@ -13,8 +13,8 @@ from .models import (
     VentaItem,
 )
 
-from .admin_forms import InlineRaladaForm
-
+from .admin_forms import InlineRaladaForm, InlineVentaItemAddForm
+from unfold.decorators import display
 from unfold.admin import (
     ModelAdmin,
     TabularInline,
@@ -31,11 +31,13 @@ class MetodoPagoAdmin(ModelAdmin):
 
 @admin.register(Saco)
 class SacoAdmin(ModelAdmin):
-    pass
+    list_display = ["__str__", "tipo_guarana"]
+
 
 @admin.register(Producto)
 class ProductoAdmin(ModelAdmin):
-    pass
+    search_fields = ["nombre"]
+    list_display = ["__str__", "precio"]
 
 class RaladaInline(StackedInline):
     model = Ralada
@@ -44,6 +46,8 @@ class RaladaInline(StackedInline):
 
 class ProduccionDetalleInline(TabularInline):
     model = ProduccionDetalle
+    autocomplete_fields = ["producto"]
+
     
 
 @admin.register(Produccion)
@@ -57,10 +61,14 @@ class ProduccionAdmin(ModelAdmin):
   
     inlines = [RaladaInline, ProduccionDetalleInline]
 
-    readonly_fields = ('fecha_registro',)
+    readonly_fields = ['fecha_registro']
+    list_display = ['__str__', 'consumo', "numero_ralada" ,'fecha_registro']
+    search_fields = ['nota']
 
-    list_display = ('__str__', 'consumo', 'fecha_registro')
-    search_fields = ('nota',)
+
+    @display(description="N° Ralada", label=True)
+    def numero_ralada(self, obj):
+        return f"{obj.ralada.numero}"
 
     def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
 
@@ -85,6 +93,10 @@ class ProduccionAdmin(ModelAdmin):
 
 class VentaItemInline(TabularInline):
     model = VentaItem
+    autocomplete_fields = ["producto"]
+    form = InlineVentaItemAddForm
+
+
 
 @admin.register(Venta)
 class VentaAdmin(ModelAdmin):

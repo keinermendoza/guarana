@@ -29,7 +29,6 @@ def tab_list(context, page, opts) -> str:
         if str(opts) in tab["models"]:
             tabs_list = tab["items"]
             break
-    print(tabs_list)
     if page == "changelist":
         data["tabs_list"] = tabs_list
 

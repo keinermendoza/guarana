@@ -1,5 +1,5 @@
 from django import forms
-from .models import Ralada
+from .models import Ralada, VentaItem, Producto
 
 class InlineRaladaForm(forms.ModelForm):
     input1 = forms.IntegerField(label='Vasilha inicial 1', required=False)
@@ -17,3 +17,26 @@ class InlineRaladaForm(forms.ModelForm):
         self.fields['peso_inicial'].widget.attrs.update({'data-peso':'peso_inicial'})
     class Media:
         js = ('admin/js/plus_two_inputs.js',)
+
+class InlineVentaItemAddForm(forms.ModelForm):
+    class Meta:
+        model = VentaItem
+        fields = "__all__"
+
+    def clean(self):
+        cleaned_data = super().clean()
+        producto = cleaned_data.get('producto')  # Obtiene el ID del producto
+        precio = cleaned_data.get('precio')
+
+        # Verifica si campo precio está vacío y si hay un producto seleccionado
+        if not precio and producto:
+            try:
+                # Obtiene la instancia del producto usando el ID
+                # producto = Producto.objects.get(id=producto_id)
+                # Asigna el precio del producto al campo precio
+                cleaned_data['precio'] = producto.precio
+                # print(cleaned_data)
+            except Producto.DoesNotExist:
+                raise forms.ValidationError("El producto seleccionado no existe.")
+
+        return cleaned_data
