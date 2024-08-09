@@ -28,10 +28,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'django_cotton',
+    'django_htmx',
+    'django_user_agents',
 
     'core',
     'api',
-    'django_htmx',
     # 'django_filters',
     # 'django_extensions',
     # 'rest_framework',
@@ -44,11 +45,12 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
-    "django_htmx.middleware.HtmxMiddleware",
+    "django_htmx.middleware.HtmxMiddleware", # htmx
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_user_agents.middleware.UserAgentMiddleware', # user_agent
 
 ]
 

@@ -4,10 +4,18 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.safestring import mark_safe
 from django.shortcuts import get_object_or_404
 from django.urls import path, reverse_lazy
+from unfold.admin import ModelAdminMixin
 from unfold.contrib.forms.widgets import ArrayWidget, WYSIWYG_CLASSES
 from django.http import JsonResponse
 from django import forms
+
+from django.contrib.admin import helpers, widgets
+from django.contrib.admin.widgets import AutocompleteSelect, AutocompleteSelectMultiple
 from unfold.admin import ModelAdmin
+from django.forms.widgets import CheckboxSelectMultiple, SelectMultiple
+from django.utils.text import (
+    format_lazy,
+)
 
 
 class WysiwygWidget(forms.Widget):

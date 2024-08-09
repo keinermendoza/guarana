@@ -1,5 +1,6 @@
 from django import forms
-from .models import Ralada, VentaItem, Producto
+from django.contrib.admin.widgets import FilteredSelectMultiple
+from .models import Ralada, VentaItem, Producto, Venta
 
 class InlineRaladaForm(forms.ModelForm):
     input1 = forms.IntegerField(label='Vasilha inicial 1', required=False)
@@ -18,6 +19,7 @@ class InlineRaladaForm(forms.ModelForm):
     class Media:
         js = ('admin/js/plus_two_inputs.js',)
 
+           
 class InlineVentaItemAddForm(forms.ModelForm):
     class Meta:
         model = VentaItem
