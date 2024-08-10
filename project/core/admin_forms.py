@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
-from .models import Ralada, VentaItem, Producto, Venta
+from .models import Ralada, VentaItem, Producto, UsoMetodoPago
 
 class InlineRaladaForm(forms.ModelForm):
     input1 = forms.IntegerField(label='Vasilha inicial 1', required=False)
@@ -8,7 +8,6 @@ class InlineRaladaForm(forms.ModelForm):
 
     class Meta:
         model = Ralada
-        # fields = "__all__"
         fields = ['cantidad_bastones' , 'input1', 'input2', 'peso_inicial', 'sobra_inicial', 'sobra_final', 'peso_final', 'saco', 'numero' ,'fecha_ralada']  # Añade el campo total_field
 
     def __init__(self, *args, **kwargs):
@@ -27,18 +26,22 @@ class InlineVentaItemAddForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        producto = cleaned_data.get('producto')  # Obtiene el ID del producto
+        producto = cleaned_data.get('producto')  # Obtiene el producto
         precio = cleaned_data.get('precio')
 
-        # Verifica si campo precio está vacío y si hay un producto seleccionado
+        # Verifica si no hay precio y hay un producto seleccionado
         if not precio and producto:
             try:
-                # Obtiene la instancia del producto usando el ID
-                # producto = Producto.objects.get(id=producto_id)
-                # Asigna el precio del producto al campo precio
                 cleaned_data['precio'] = producto.precio
-                # print(cleaned_data)
             except Producto.DoesNotExist:
                 raise forms.ValidationError("El producto seleccionado no existe.")
 
         return cleaned_data
+    
+class InlineUsoMetodoPagoForm(forms.ModelForm):
+    class Meta:
+        model = UsoMetodoPago
+        fields = "__all__"
+
+    class Media:
+        js = ('admin/js/copy_total.js',)

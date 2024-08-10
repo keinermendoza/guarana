@@ -7,6 +7,7 @@ from .models import (
     TipoGuarana,
     Saco,
     MetodoPago,
+    UsoMetodoPago,
     Producto,
     Ralada,
     Produccion,
@@ -15,7 +16,12 @@ from .models import (
     VentaItem,
 )
 
-from .admin_forms import InlineRaladaForm, InlineVentaItemAddForm
+from .admin_forms import (
+    InlineRaladaForm,
+    InlineVentaItemAddForm,
+    InlineUsoMetodoPagoForm
+) 
+
 from unfold.decorators import display
 from unfold.admin import (
     ModelAdmin,
@@ -23,7 +29,6 @@ from unfold.admin import (
     StackedInline
 ) 
 
-from django_user_agents.utils import get_user_agent
 
 
 @admin.register(TipoGuarana)
@@ -57,9 +62,11 @@ class ProduccionDetalleInline(TabularInline):
 
 @admin.register(Produccion)
 class ProduccionAdmin(ModelAdmin):
-    change_form_template = "admin/change_form.html"
+    # change template for extend from custom base.html that uses custom templatetag 
+    change_form_template = "admin/ralada_change_form.html"
     fieldsets = (
         ("Producción", {
+            "classes": ["tab"],
             'fields': ('consumo', 'nota')
         }),
     )
@@ -76,17 +83,15 @@ class ProduccionAdmin(ModelAdmin):
         return f"{obj.ralada.numero}"
 
     def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
-
-    # def change_view(self, request, object_id, form_url="", extra_context=None):
         """
-        adds the endpoints for handle upload/delete related images to context
-        in the custom 'change_form_template' 
-        this scripts are loadded by 'js/admin.js'
+        add context for change template render by templatetag tab_list.
+        tab_list is loaded in base.html 
+        reads the context and renders tab_list.html passing some of the context
         """
         extra_context = extra_context or {}
-        extra_context.update({
-            "put_first_ralada_tab": True
-        })
+        # extra_context.update({
+        #     "put_first_ralada_tab": True
+        # })
         return super().changeform_view(
             request,
             object_id,
@@ -100,38 +105,27 @@ class VentaItemInline(TabularInline):
     model = VentaItem
     autocomplete_fields = ["producto"]
     form = InlineVentaItemAddForm
+    extra = 1
 
-
+class UsoMetodoPagoInline(TabularInline):
+    model = UsoMetodoPago
+    extra = 1
+    form = InlineUsoMetodoPagoForm
 
 @admin.register(Venta)
 class VentaAdmin(ModelAdmin):
-    filter_horizontal = ["metodo_pago"]
-    inlines = [VentaItemInline]
+    inlines = [UsoMetodoPagoInline, VentaItemInline]
 
     fieldsets = (
         ("Venta", {
-            'fields': ('total', 'metodo_pago')
+            "classes": ["tab"],
+            'fields': ['total']
         }),
         ('Extras', {
+            "classes": ["tab"],
             'fields': ['fecha_venta', 'nota'],
-            'classes': ('collapse',)
         }),
     )
 
 
-    def formfield_for_manytomany(self, db_field, request=None, **kwargs):
-        """
-        Get a form Field for a ManyToManyField. Tweak so filter_horizontal
-        control used by default. If raw_id or autocomplete are specified
-        will take precedence over this.
-        """
-        filter_horizontal_original = self.filter_horizontal
-        self.filter_horizontal = (db_field.name,)
-        if request != None:
-            user_agent = get_user_agent(request)
-        if not user_agent.is_pc:
-            self.filter_horizontal = ()
-
-        form_field = super().formfield_for_manytomany(db_field, request=None, **kwargs)
-        self.filter_horizontal = filter_horizontal_original
-        return form_field
+    

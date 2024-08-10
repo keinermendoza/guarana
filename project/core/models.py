@@ -23,6 +23,14 @@ class MetodoPago(models.Model):
         verbose_name = "Metodo de Pago"
         verbose_name_plural = "Metodos de Pago"
 
+class UsoMetodoPago(models.Model):
+    monto = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    metodo = models.ForeignKey(MetodoPago, related_name="usos_metodo_pago", on_delete=models.CASCADE)
+    venta = models.ForeignKey("Venta", related_name="usos_metodo_pago", on_delete=models.CASCADE)
+
+    def __str__(self) -> str:
+        return f"Metodo {self.metodo} {self.venta}"
+
 class Producto(models.Model):
     nombre = models.CharField(max_length=200)
     descripcion = models.TextField(blank=True, null=True)
