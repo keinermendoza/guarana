@@ -2,6 +2,7 @@ from django import forms
 from django.db import models
 from django.contrib import admin
 from django.contrib.admin.options import BaseModelAdmin
+from unfold.contrib.inlines.admin import NonrelatedTabularInline
 
 from .models import (
     TipoGuarana,
@@ -14,6 +15,7 @@ from .models import (
     ProduccionDetalle,
     Venta,
     VentaItem,
+    CompraVidros,   
 )
 
 from .admin_forms import (
@@ -30,6 +32,9 @@ from unfold.admin import (
 ) 
 
 
+@admin.register(CompraVidros)
+class CompraVidrosAdmin(ModelAdmin):
+   pass
 
 @admin.register(TipoGuarana)
 class TipoGuaranaAdmin(ModelAdmin):
@@ -112,9 +117,27 @@ class UsoMetodoPagoInline(TabularInline):
     extra = 1
     form = InlineUsoMetodoPagoForm
 
+class CompraVidrosInline(NonrelatedTabularInline):
+    model = CompraVidros
+    fields = ["precio", "cantidad"]
+    extra = 1
+
+    def get_form_queryset(self, obj):
+        """
+        Gets all nonrelated objects needed for inlines. Method must be implemented.
+        """
+        return self.model.objects.all()
+
+    def save_new_instance(self, parent, instance):
+        """
+        Extra save method which can for example update inline instances based on current
+        main model object. Method must be implemented.
+        """
+        pass
+
 @admin.register(Venta)
 class VentaAdmin(ModelAdmin):
-    inlines = [UsoMetodoPagoInline, VentaItemInline]
+    inlines = [UsoMetodoPagoInline, VentaItemInline, CompraVidrosInline]
 
     fieldsets = (
         ("Venta", {

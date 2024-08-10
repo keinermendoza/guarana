@@ -290,6 +290,12 @@ UNFOLD = {
                         "link": reverse_lazy("admin:core_producto_changelist"),
                         "permission": lambda request: request.user.is_superuser,
                     },
+                     {
+                        "title": "Compra de Vidros",
+                        "icon": "local_mall",  # Supported icon set: https://fonts.google.com/icons
+                        "link": reverse_lazy("admin:core_compravidros_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
                 ],
             },
         ],

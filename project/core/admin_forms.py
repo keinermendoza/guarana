@@ -44,4 +44,4 @@ class InlineUsoMetodoPagoForm(forms.ModelForm):
         fields = "__all__"
 
     class Media:
-        js = ('admin/js/copy_total.js',)
+        js = ('admin/js/vendas_formset.js',)

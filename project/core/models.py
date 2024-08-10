@@ -13,7 +13,13 @@ class TipoGuarana(models.Model):
         verbose_name_plural = "Variedades de Guarana"
     
 class MetodoPago(models.Model):
+    class Tipo(models.TextChoices):
+        CARTON = ("C", "Cartão")
+        EFECTIVO = ("D", "Dinheiro")
+        PIX = ("P", "Pix")
+
     nombre = models.CharField(max_length=100)
+    tipo = models.CharField(max_length=1, choices=Tipo.choices, default=Tipo.CARTON)
     descripcion = models.TextField(blank=True, null=True)
     
     def __str__(self) -> str:
@@ -46,6 +52,7 @@ class Venta(models.Model):
     total = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     fecha_venta = models.DateTimeField(default=tz.now)
     fecha_registro = models.DateTimeField(auto_now=True)
+    compra_vidros = models.ForeignKey("CompraVidros", related_name="venta", on_delete=models.SET_NULL, blank=True, null=True)
 
     class Meta:
         verbose_name = "Venta"
@@ -145,3 +152,12 @@ class ProduccionDetalle(models.Model):
 
     def __str__(self) -> str:
         return f'{self.cantidad} x {self.producto}'
+
+class CompraVidros(models.Model):
+    precio = models.DecimalField(max_digits=10, decimal_places=2, blank=True)
+    cantidad = models.PositiveIntegerField()
+    fecha_registro = models.DateTimeField(auto_now=True)
+    fecha_compra = models.DateTimeField(default=tz.now)
+    nota = models.TextField(blank=True, null=True)
+
+
