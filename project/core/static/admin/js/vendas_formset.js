@@ -3,31 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener('resize', hideExtraButtonsOnSmallScreens)
 
     createAndAddCopyValueButtonFromTotal() // only one button
-    
-    const [header, fieldset]  = getPriceHeaderAndFieldset()
-    addEventHeaderTooglePriceVisibility(header, fieldset)
-    header.click()
 })
-
-// return the fieldset header in which are the price inputs 
-const getPriceHeaderAndFieldset = () => {
-    const td = document.querySelector('[data-label="Precio"]')
-    const fieldset = td.closest('fieldset')
-    const header = fieldset.querySelector('h2')
-    return [header, fieldset]
-}
-
-// toggle visibility of price for product item inline
-function addEventHeaderTooglePriceVisibility(header, fieldset) {
-    header.classList.add('cursor-pointer')
-    header.innerText = header.innerText + " (faza click para mostrar os preços)" 
-    header.onclick = () => {
-        fieldset.querySelectorAll('[data-label="Precio"]').forEach((priceTd) => {
-            priceTd.classList.toggle('hidden')
-            priceTd.querySelector('input').classList.toggle('hidden')
-        })
-    }
-}
      
 // copies value from total to first item
 function createAndAddCopyValueButtonFromTotal() {
@@ -62,8 +38,6 @@ const helperAddCopyButtonToPage = (button) => {
         input.value = total_input.value
     })
 }
-
-
 
 // get elements for toggle visibilite and calls executeHideExtraButtonsOnSmallScreens
 function hideExtraButtonsOnSmallScreens() {

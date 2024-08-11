@@ -34,7 +34,7 @@ INSTALLED_APPS = [
     'core',
     'api',
     # 'django_filters',
-    # 'django_extensions',
+    'django_extensions',
     # 'rest_framework',
 
 ]
@@ -219,7 +219,7 @@ UNFOLD = {
     "SITE_TITLE": _("Loja de Guaraná"),
     "SITE_SYMBOL": "settings",
     # "SHOW_HISTORY": True,
-    "DASHBOARD_CALLBACK": "core.admin_utils.get_extra_context",
+    "DASHBOARD_CALLBACK": "core.views.get_extra_context",
     "SIDEBAR": {
         "show_search": False,  # Search in applications and models names
         "show_all_applications": False,  # Dropdown with all applications and models
@@ -296,6 +296,20 @@ UNFOLD = {
                         "link": reverse_lazy("admin:core_compravidros_changelist"),
                         "permission": lambda request: request.user.is_superuser,
                     },
+                ],
+            },
+             {
+                "title": _("Operações"),
+                "separator": True,  # Top border
+                "collapsible": True,  # Collapsible group of links
+                "items": [
+                    {
+                        "title": "Vendas por Metodo",
+                        "icon": "add_card",  # Supported icon set: https://fonts.google.com/icons
+                        "link": reverse_lazy("admin:core_usometodopago_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                    
                 ],
             },
         ],

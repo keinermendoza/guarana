@@ -33,6 +33,7 @@ class UsoMetodoPago(models.Model):
     monto = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     metodo = models.ForeignKey(MetodoPago, related_name="usos_metodo_pago", on_delete=models.CASCADE)
     venta = models.ForeignKey("Venta", related_name="usos_metodo_pago", on_delete=models.CASCADE)
+    declarado = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return f"Metodo {self.metodo} {self.venta}"
@@ -150,6 +151,7 @@ class ProduccionDetalle(models.Model):
     cantidad = models.PositiveIntegerField()
     fecha_registro = models.DateTimeField(auto_now=True)
 
+
     def __str__(self) -> str:
         return f'{self.cantidad} x {self.producto}'
 
@@ -161,3 +163,28 @@ class CompraVidros(models.Model):
     nota = models.TextField(blank=True, null=True)
 
 
+class Gasto(models.Model):
+    valor = models.DecimalField(max_digits=10, decimal_places=2, blank=True)
+    fecha_registro = models.DateTimeField(auto_now=True)
+    fecha_gasto = models.DateTimeField(default=tz.now)
+    nota = models.TextField(blank=True, null=True)
+
+
+class Consumo(models.Model):
+    productos = models.ManyToManyField(Producto, related_name="consumo")
+    cantidad = models.PositiveIntegerField()
+    valor = models.DecimalField(max_digits=10, decimal_places=2, blank=True)
+    fecha_registro = models.DateTimeField(auto_now=True)
+    fecha_consumo = models.DateTimeField(default=tz.now)
+    nota = models.TextField(blank=True, null=True)
+
+class Inventario(models.Model):
+    anotaciones = models.ForeignKey("AnotacionInventario", related_name="cierre_inventarios", on_delete=models.CASCADE)
+    fecha_registro = models.DateTimeField(auto_now=True)
+    fecha_inventario = models.DateTimeField(default=tz.now)
+
+class AnotacionInventario(models.Model):
+    productos = models.ForeignKey(Producto, related_name="anotaciones_inventario", on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField()
+    valor = models.DecimalField(max_digits=10, decimal_places=2, blank=True)
+    

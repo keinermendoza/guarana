@@ -1,8 +1,13 @@
 from django import forms
 from django.db import models
+from django.urls import path
+from django.shortcuts import render
 from django.contrib import admin
 from django.contrib.admin.options import BaseModelAdmin
 from unfold.contrib.inlines.admin import NonrelatedTabularInline
+from django.utils import timezone
+from django.utils.formats import date_format
+from django_htmx.http import trigger_client_event
 
 from .models import (
     TipoGuarana,
@@ -15,7 +20,11 @@ from .models import (
     ProduccionDetalle,
     Venta,
     VentaItem,
-    CompraVidros,   
+    CompraVidros,
+    Consumo,
+    Gasto,
+    Inventario,
+    AnotacionInventario 
 )
 
 from .admin_forms import (
@@ -31,10 +40,79 @@ from unfold.admin import (
     StackedInline
 ) 
 
+from .views import get_extra_context
 
 @admin.register(CompraVidros)
 class CompraVidrosAdmin(ModelAdmin):
    pass
+
+@admin.register(UsoMetodoPago)
+class UsoMetodoPagoAdmin(ModelAdmin):
+   list_display = ["monto", "fecha_venta", "metodo", "declarado"]
+   list_display_links = None
+   
+   @display(description="data")
+   def fecha_venta(self, obj):
+       if obj.venta.fecha_venta:
+            return date_format(timezone.localtime(obj.venta.fecha_venta), use_l10n=True)
+       return ""
+
+@admin.register(Consumo)
+class ConsumoAdmin(ModelAdmin):
+   pass
+
+@admin.register(Gasto)
+class GastoAdmin(ModelAdmin):
+   pass
+
+
+@admin.register(Inventario)
+class InventarioAdmin(ModelAdmin):
+    custom_template = "admin/admin_home_partials/main_content.html"
+            
+    def get_urls(self):
+        """
+        adds customs urls and views for handeling upload/delete related images
+        """
+        urls = super().get_urls()
+        my_urls = [
+            path("diario/", self.admin_site.admin_view(self.resumen_diario), name='resumen_diario'),
+            path("semanal/", self.admin_site.admin_view(self.resumen_semanal), name='resumen_semanal'),
+            path("mensal/", self.admin_site.admin_view(self.resumen_mensual), name='resumen_mensual'),
+
+        ]
+        return my_urls + urls
+    
+
+    def resumen_diario(self, request, *args, **kwargs):
+        """
+        custom view for show daily amounts
+        """
+        context = self.admin_site.each_context(request)
+        context = get_extra_context(request, context)
+        resp = render(request, self.custom_template, context)
+        return trigger_client_event(resp, "reload_charts", after="swap")
+    def resumen_semanal(self, request, *args, **kwargs):
+        """
+        custom view for show daily amounts
+        """
+        context = self.admin_site.each_context(request)
+        context = get_extra_context(request, context)
+        resp = render(request, self.custom_template, context)
+        return trigger_client_event(resp, "reload_charts", after="swap")
+    def resumen_mensual(self, request, *args, **kwargs):
+        """
+        custom view for show daily amounts
+        """
+        context = self.admin_site.each_context(request)
+        context = get_extra_context(request, context)
+        resp = render(request, self.custom_template, context)
+        return trigger_client_event(resp, "reload_charts", after="swap")
+@admin.register(AnotacionInventario)
+class AnotacionInventarioAdmin(ModelAdmin):
+   pass
+
+
 
 @admin.register(TipoGuarana)
 class TipoGuaranaAdmin(ModelAdmin):
@@ -94,9 +172,9 @@ class ProduccionAdmin(ModelAdmin):
         reads the context and renders tab_list.html passing some of the context
         """
         extra_context = extra_context or {}
-        # extra_context.update({
-        #     "put_first_ralada_tab": True
-        # })
+        extra_context.update({
+            "put_first_ralada_tab": True
+        })
         return super().changeform_view(
             request,
             object_id,
