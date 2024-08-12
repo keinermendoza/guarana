@@ -1,6 +1,8 @@
 
 from django.db import models
 from django.utils import timezone as tz
+from django.db.models import Sum, FloatField, DecimalField
+from django.db.models.functions import TruncDay, Cast
 
 class TipoGuarana(models.Model):
     nombre = models.CharField(max_length=100)
@@ -46,7 +48,23 @@ class Producto(models.Model):
     
     def __str__(self) -> str:
         return self.nombre
-    
+
+class VentaQueryset(models.QuerySet):
+    def ventas_por_metodopago(
+        self, 
+        year=tz.now().year,
+        month=tz.now().month,
+    ):
+        """
+        filtra las ventas por tipo de metodo de pago dados: mes y año.
+        dia: anota una version corta de la fecha 
+        """
+        return self.filter(fecha_venta__year=year, fecha_venta__month=month)\
+             .annotate(dia=TruncDay('fecha_venta'))\
+             .values('dia', 'metodo_pago__tipo')\
+             .annotate(total_ventas=Sum('total', output_field=DecimalField()))\
+             .order_by('dia', 'metodo_pago__tipo')
+
 class Venta(models.Model):
     metodo_pago = models.ManyToManyField(MetodoPago, related_name="ventas")
     nota = models.TextField(blank=True, null=True)
@@ -55,6 +73,7 @@ class Venta(models.Model):
     fecha_registro = models.DateTimeField(auto_now=True)
     compra_vidros = models.ForeignKey("CompraVidros", related_name="venta", on_delete=models.SET_NULL, blank=True, null=True)
 
+    objects = VentaQueryset.as_manager()
     class Meta:
         verbose_name = "Venta"
         verbose_name_plural = "Ventas"
@@ -102,7 +121,6 @@ class Saco(models.Model):
    
         
 class Produccion(models.Model):
-    # ralada = models.OneToOneField(Ralada, related_name="produccion", on_delete=models.CASCADE)
     consumo = models.PositiveIntegerField(blank=True, null=True)
     fecha_registro = models.DateTimeField(auto_now=True)
     nota = models.TextField(blank=True, null=True)
@@ -113,6 +131,54 @@ class Produccion(models.Model):
     class Meta:
         verbose_name = "Produccion"
         verbose_name_plural = "- Producciones"
+
+class RaladaQueryset(models.QuerySet):
+
+    def filtrar_por_fecha_y_tipo(
+        self, 
+        year=tz.now().year,
+        month=tz.now().month,
+        variedad="luzeia",
+    ):
+        """
+        filtra las raladas por mes, año y variedad.
+        dia: anota una version corta de la fecha 
+        """
+        return self.filter(saco__tipo_guarana__nombre__iexact=variedad, fecha_ralada__year=year, fecha_ralada__month=month)\
+            .annotate(dia=TruncDay('fecha_ralada'))
+            
+   
+    def bastones_diarios(
+        self, 
+        year=tz.now().year,
+        month=tz.now().month,
+        variedad="luzeia",
+    ):
+        """
+        lista con cantidad de bastones procesados diarios
+        para un mes, año y variedad  
+        """
+        
+        return self.filtrar_por_fecha_y_tipo(year=year, month=month, variedad=variedad)\
+            .values('dia')\
+            .annotate(total_bastones=Sum('cantidad_bastones'))\
+            .order_by('dia')
+        
+    def procesado_diario(
+        self,
+        year=tz.now().year,
+        month=tz.now().month,
+        variedad="luzeia",
+    ):
+        """
+        lista kg de guarana bastones procesado diario
+        para un mes, año y variedad  
+        """
+        return self.filtrar_por_fecha_y_tipo(year=year, month=month, variedad=variedad)\
+            .values('dia')\
+            .annotate(kg_procesados=Cast(Sum('peso_inicial'), FloatField()) / 1000)\
+            .order_by('dia')
+
 
 class Ralada(models.Model):
     """
@@ -131,6 +197,7 @@ class Ralada(models.Model):
 
     fecha_registro = models.DateTimeField(auto_now=True)
     fecha_ralada = models.DateTimeField(default=tz.now)
+    objects = RaladaQueryset.as_manager()
 
     @property
     def peso_peneirado(self) -> int:
