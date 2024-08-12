@@ -26,12 +26,13 @@ def get_extra_context(request, context):
         "Sun",
     ]
 
-    positive = [[1, random.randrange(8, 28)] for i in range(1, 28)]
+    positive = [[0, random.randrange(8, 28)] for i in range(1, 28)]
     negative = [[-1, -random.randrange(8, 28)] for i in range(1, 28)]
     average = [r[1] - random.randint(3, 5) for r in positive]
     performance_positive = [[1, random.randrange(8, 28)] for i in range(1, 28)]
     performance_negative = [[-1, -random.randrange(8, 28)] for i in range(1, 28)]
 
+    print(positive)
     context.update(
         {
             "navigation": [

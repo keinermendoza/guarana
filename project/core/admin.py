@@ -9,6 +9,12 @@ from django.utils import timezone
 from django.utils.formats import date_format
 from django_htmx.http import trigger_client_event
 
+
+from django.utils.safestring import mark_safe
+from django.utils.translation import gettext_lazy as _
+import json
+from django.urls import reverse_lazy
+
 from .models import (
     TipoGuarana,
     Saco,
@@ -88,8 +94,142 @@ class InventarioAdmin(ModelAdmin):
         """
         custom view for show daily amounts
         """
+
+        data_ventas = Venta.objects.data_for_chartjs()
         context = self.admin_site.each_context(request)
-        context = get_extra_context(request, context)
+        context.update(
+            {
+                "navigation": [
+                    {"title": _("Hoje"), "link": reverse_lazy('admin:resumen_diario'), "active":reverse_lazy('admin:resumen_diario') == request.path_info},
+                    {"title": _("Semana"), "link": reverse_lazy('admin:resumen_semanal'), "active":reverse_lazy('admin:resumen_semanal') == request.path_info},
+                    {"title": _("Mes"), "link": reverse_lazy('admin:resumen_mensual'), "active":reverse_lazy('admin:resumen_mensual') == request.path_info},
+                ],
+                "filters": [
+                    {"title": _("All"), "link": "#", "active": True},
+                    {
+                        "title": _("New"),
+                        "link": "#",
+                    },
+                ],
+                "kpi": [
+                    {
+                        "title": "Product A Performance",
+                        "metric": "$1,234.56",
+                        "footer": mark_safe(
+                            '<strong class="text-green-600 font-medium">+3.14%</strong>&nbsp;progress from last week'
+                        ),
+                        # "chart": json.dumps(
+                        #     {
+                        #         "labels": [WEEKDAYS[day % 7] for day in range(1, 28)],
+                        #         "datasets": [{"data": average, "borderColor": "#9333ea"}],
+                        #     }
+                        # ),
+                    },
+                    {
+                        "title": "Product B Performance",
+                        "metric": "$1,234.56",
+                        "footer": mark_safe(
+                            '<strong class="text-green-600 font-medium">+3.14%</strong>&nbsp;progress from last week'
+                        ),
+                    },
+                    {
+                        "title": "Product C Performance",
+                        "metric": "$1,234.56",
+                        "footer": mark_safe(
+                            '<strong class="text-green-600 font-medium">+3.14%</strong>&nbsp;progress from last week'
+                        ),
+                    },
+                ],
+                # "progress": [
+                #     {
+                #         "title": "Social marketing e-book",
+                #         "description": " $1,234.56",
+                #         "value": random.randint(10, 90),
+                #     },
+                #     {
+                #         "title": "Freelancing tasks",
+                #         "description": " $1,234.56",
+                #         "value": random.randint(10, 90),
+                #     },
+                #     {
+                #         "title": "Development coaching",
+                #         "description": " $1,234.56",
+                #         "value": random.randint(10, 90),
+                #     },
+                #     {
+                #         "title": "Product consulting",
+                #         "description": " $1,234.56",
+                #         "value": random.randint(10, 90),
+                #     },
+                #     {
+                #         "title": "Other income",
+                #         "description": " $1,234.56",
+                #         "value": random.randint(10, 90),
+                #     },
+                # ],
+                "chart": json.dumps(
+                    {
+                        "labels": data_ventas['fechas'],
+                        "datasets": [
+                            {
+                                "label": "Dinheiro",
+                                "data": data_ventas['efectivo'],
+                                "borderRadius":5,
+                                "barThickness": 10,
+                                "backgroundColor": "#f0abfc",
+                            },
+                            {
+                                "label": "Cartão",
+                                "data": data_ventas['carton'],
+                                "borderRadius":5,
+                                "barThickness": 10,
+                                "backgroundColor": "#9333ea",
+                            },
+                            {
+                                "label": "Pix",
+                                "data": data_ventas['pix'],
+                                "borderRadius":5,
+                                "barThickness": 10,
+                                "backgroundColor": "#f43f5e",
+                            },
+                        ],
+                    }
+                ),
+                "performance": [
+                    {
+                        "title": _("Last week revenue"),
+                        "metric": "$1,234.56",
+                        "footer": mark_safe(
+                            '<strong class="text-green-600 font-medium">+3.14%</strong>&nbsp;progress from last week'
+                        ),
+                        # "chart": json.dumps(
+                        #     {
+                        #         "labels": [WEEKDAYS[day % 7] for day in range(1, 28)],
+                        #         "datasets": [
+                        #             {"data": performance_positive, "borderColor": "#9333ea"}
+                        #         ],
+                        #     }
+                        # ),
+                    },
+                    {
+                        "title": _("Last week expenses"),
+                        "metric": "$1,234.56",
+                        "footer": mark_safe(
+                            '<strong class="text-green-600 font-medium">+3.14%</strong>&nbsp;progress from last week'
+                        ),
+                        # "chart": json.dumps(
+                        #     {
+                        #         "labels": [WEEKDAYS[day % 7] for day in range(1, 28)],
+                        #         "datasets": [
+                        #             {"data": performance_negative, "borderColor": "#f43f5e"}
+                        #         ],
+                        #     }
+                        # ),
+                    },
+                ],
+            },
+        )
+
         resp = render(request, self.custom_template, context)
         return trigger_client_event(resp, "reload_charts", after="swap")
     def resumen_semanal(self, request, *args, **kwargs):

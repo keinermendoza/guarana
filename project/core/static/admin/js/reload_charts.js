@@ -30,6 +30,33 @@ function renderChartFromData() {
                         beginAtZero: true,
                         
                     }
+                },
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Ventas Diarias por Método de Pago'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                // Obtener el valor numérico
+                                let value = context.parsed.y;
+
+                                // Formatear como moneda en reales brasileños
+                                let formattedValue = new Intl.NumberFormat('pt-BR', {
+                                    style: 'currency',
+                                    currency: 'BRL'
+                                }).format(value);
+
+                                // Devolver el texto del tooltip personalizado
+                                return `${context.dataset.label} ${formattedValue}`;
+                            }
+                        }
+                    }
                 }
             }
         });
