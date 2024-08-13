@@ -3,11 +3,14 @@ from django.test import TestCase
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 from decimal import Decimal
-from collections import defaultdict
 import datetime
 from core.models import (
     Venta,
     MetodoPago,
+    Ralada,
+    Produccion,
+    Saco,
+    TipoGuarana
 )
 
 class VentaModelCreation(TestCase):
@@ -119,9 +122,10 @@ class VentaQuerysetMethods(TestCase):
         self.assertEquals(dia_12_efectivo['total_ventas'], Decimal('175.00'))
         self.assertEquals(dia_13_efectivo['total_ventas'], Decimal('400.00'))
 
-    def test_dos_metodo_pago_queryset__venta_mensual_por_dia_y_metodo_pago(self):
+    def test_venta_diaria(self):
         """
-        agrupa las ventas en 6 objetos sumando todas las ventas por dia y metodo de pago
+        regresa listas representando el total de la venta diaria
+        una lista por cada metodo de pago, un item por cada día
         """
         pix = MetodoPago.objects.get(nombre="Pix")
         efectivo = MetodoPago.objects.get(nombre="Dinheiro")
@@ -132,90 +136,136 @@ class VentaQuerysetMethods(TestCase):
             else:
                 venta.metodo_pago.add(efectivo)
 
-        resultados = Venta.objects.data_for_chartjs(year=2024, month=8)
+        resultados = Venta.objects.venta_diaria(year=2024, month=8)
         
-        print(resultados)
         self.assertIn('11/08', resultados['fechas'])
         self.assertIn('12/08', resultados['fechas'])
         self.assertIn('13/08', resultados['fechas'])
 
+        self.assertEquals(len(resultados['efectivo']), 3)
+        self.assertEquals(sum(resultados['efectivo']), 775)
+
+        self.assertEquals(len(resultados['pix']), 3)
+        self.assertEquals(sum(resultados['pix']), 525)
+
+        self.assertEquals(len(resultados['carton']), 3)
+        self.assertEquals(sum(resultados['carton']), 0)
+
+
+    def test_totales_mensuales(self):
+        """
+        """
+        pix = MetodoPago.objects.get(nombre="Pix")
+        efectivo = MetodoPago.objects.get(nombre="Dinheiro")
+
+        for i, venta in enumerate(Venta.objects.all(), 1):
+            if i % 2 == 1:
+                venta.metodo_pago.add(pix)
+            else:
+                venta.metodo_pago.add(efectivo)
+
+        resultados = Venta.objects.totales_mensuales(year=2024, month=8)
+
+        self.assertEquals(len(resultados), 3)
+        self.assertEquals(resultados['efectivo'], 775)
+        self.assertEquals(resultados['pix'], 525)
+        self.assertEquals(resultados['carton'], 0)
+
+    def test_data_grafico_bar_chartjs(self):
+        """
+        """
+        pix = MetodoPago.objects.get(nombre="Pix")
+        efectivo = MetodoPago.objects.get(nombre="Dinheiro")
+
+        for i, venta in enumerate(Venta.objects.all(), 1):
+            if i % 2 == 1:
+                venta.metodo_pago.add(pix)
+            else:
+                venta.metodo_pago.add(efectivo)
+
+        resultados = Venta.objects.data_grafico_bar_chartjs(year=2024, month=8)
+
+        self.assertEquals(len(resultados), 4)
+        self.assertEquals(len(resultados['efectivo']), 3)
+        self.assertEquals(len(resultados['pix']), 3)
+        self.assertEquals(len(resultados['carton']), 3)
+
+        self.assertEquals(resultados['carton'], [[0,0],[0,0],[0,0]])
+        self.assertEquals(resultados['efectivo'], [[0,200],[0,175],[0,400]])
+
+
+class RaladaSacoModelCreation(TestCase):
+    def test_ralada_required_fields(self):
+        produccion = Produccion.objects.create()
+        ralada = Ralada.objects.create(produccion=produccion)
+        self.assertIsInstance(ralada, Ralada)
+
+    def test_tipo_guarana_required_fields(self):
+        tipo = TipoGuarana.objects.create(nombre="Maue do Indio")
+        self.assertIsInstance(tipo, TipoGuarana)
+
+    def test_saco_test_required_fields(self):
+        tipo = TipoGuarana.objects.create(nombre="Tibiriça")
+        saco = Saco.objects.create(numero=312, tipo_guarana=tipo)
+        self.assertIsInstance(saco, Saco)
+
+
+class RaladaQuerysetMethods(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        maue = TipoGuarana.objects.create(nombre="Maue")
+        luzeia = TipoGuarana.objects.create(nombre="Luzeia")
+        Saco.objects.create(numero=301, tipo_guarana=maue)
+        Saco.objects.create(numero=303, tipo_guarana=luzeia)
+
+    def setUp(self):
+        saco_301 = Saco.objects.get(numero=301)
+        saco_303 = Saco.objects.get(numero=303)
+
+        p1 = Produccion.objects.create()
+        p2 = Produccion.objects.create()
+        p3 = Produccion.objects.create()
+        p4 = Produccion.objects.create()
+        p5 = Produccion.objects.create()
+        p6 = Produccion.objects.create()
         
+        p7 = Produccion.objects.create()
 
 
-# metodo_pago = models.ManyToManyField(MetodoPago, related_name="ventas")
-            # nota = models.TextField(blank=True, null=True)
-            # total = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-            # fecha_venta = models.DateField(default=tz.now)
-            # fecha_registro = models.DateTimeField(auto_now=True)
-            # compra_vidros = models.ForeignKey("CompraVidros", related_name="venta", on_delete=models.SET_NULL, blank=True, null=True)
+        Ralada.objects.create(produccion=p1, saco=saco_301, cantidad_bastones=25, peso_inicial=5100, peso_final=4950 ,fecha_ralada='2024-07-11')
+        Ralada.objects.create(produccion=p2, saco=saco_303, cantidad_bastones=30, peso_inicial=5300, peso_final=5200 ,fecha_ralada='2024-07-15')
+        Ralada.objects.create(produccion=p3, saco=saco_301, cantidad_bastones=25, peso_inicial=4900, peso_final=4750 ,fecha_ralada='2024-07-19')
+        Ralada.objects.create(produccion=p4, saco=saco_303, cantidad_bastones=30, peso_inicial=5125, peso_final=4990 ,fecha_ralada='2024-07-24')
+        Ralada.objects.create(produccion=p5, saco=saco_301, cantidad_bastones=25, peso_inicial=5050, peso_final=4700 ,fecha_ralada='2024-07-29')
+        Ralada.objects.create(produccion=p6, saco=saco_303, cantidad_bastones=30, peso_inicial=5400, peso_final=5250 ,fecha_ralada='2024-07-30')
+        
+        Ralada.objects.create(produccion=p7, saco=saco_303, cantidad_bastones=30, peso_inicial=5400, peso_final=5250 ,fecha_ralada='2024-08-05')
 
-# from .models import Project, Testimonial
-# from django.core.exceptions import ValidationError
+    def test_filtrar_por_fecha_y_tipo(self):
+        """
+        filtra raladas por mes, año y variedad de guarana (usando el nombre en del tipo de guarana en iexac)
+        """
+        resultado = Ralada.objects.filtrar_por_fecha_y_tipo(year=2024, month=7, variedad="maue")
+        self.assertEquals(len(resultado), 3)
 
-# class ProjectMinimumRequirements(TestCase):
-#     def test_project_creation_dosent_require_image(self):
-#         project = Project.objects.create(
-#             customer="some one",
-#             customer_commercial_field="does some stuff",
-#             description="some description"
-#         )
-#         self.assertIsInstance(project, Project)
+        resultado = Ralada.objects.filtrar_por_fecha_y_tipo(year=2024, month=7, variedad="luzeia")
+        self.assertEquals(len(resultado), 3)
 
-# class ProjectImageFieldValidation(TestCase):
-#     def setUp(self):
-#         Project.objects.create(
-#             customer="some one",
-#             customer_commercial_field="does some stuff",
-#             description="some description"
-#         )
+        resultado = Ralada.objects.filtrar_por_fecha_y_tipo(year=2024, month=8, variedad="maue")
+        self.assertEquals(len(resultado), 0)
 
-#     def test_project_creation_cannot_be_published_without_image(self):
-#         project = Project.objects.first()
-#         self.assertEquals(project.status, Project.Status.EDITING)
+        resultado = Ralada.objects.filtrar_por_fecha_y_tipo(year=2024, month=8, variedad="luzeia")
+        self.assertEquals(len(resultado), 1)
 
-#         with self.assertRaises(ValidationError) as e: 
-#             project.publish()
+    # NO TIENE MUCHO SENTIDO
+    # def test_bastones_diarios(self):
+    #     resultado = Ralada.objects.bastones_diarios(year=2024, month=7, variedad="maue")
+    #     print(resultado)
+    #     self.assertEquals(1,1)
 
-#         self.assertIn('image', e.exception.message_dict)
-#         self.assertEqual(
-#             e.exception.message_dict['image'],
-#             ["For publishing you need to add an image."]
-#         )
-
-#     def test_project_creation_can_be_publishing_when_has_image(self):
-#         project = Project.objects.first()
-#         self.assertEquals(project.status, Project.Status.EDITING)
-
-#         project.image = "the/path/to/some/image.jpg"
-#         project.publish()
-#         self.assertEquals(project.status, Project.Status.PUBLISHED)
-
-
-# class TestimonialImageFieldValidation(TestCase):
-#     def setUp(self):
-#         Testimonial.objects.create(
-#             name="some one",
-#             profession="does some stuff",
-#             message="some description"
-#         )
-
-#     def test_testimonial_creation_cannot_be_published_without_image(self):
-#         testimonial = Testimonial.objects.first()
-#         self.assertEquals(testimonial.status, Testimonial.Status.EDITING)
-
-#         with self.assertRaises(ValidationError) as e: 
-#             testimonial.publish()
-
-#         self.assertIn('image', e.exception.message_dict)
-#         self.assertEqual(
-#             e.exception.message_dict['image'],
-#             ["For publishing you need to add an image."]
-#         )
-
-#     def test_testimonial_creation_can_be_publishing_when_has_image(self):
-#         testimonial = Testimonial.objects.first()
-#         self.assertEquals(testimonial.status, Testimonial.Status.EDITING)
-
-#         testimonial.image = "the/path/to/some/image.jpg"
-#         testimonial.publish()
-#         self.assertEquals(testimonial.status, Testimonial.Status.PUBLISHED)
+    # NO TIENE MUCHO SENTIDO
+    # def test_procesado_diario(self):
+    #     resultado = Ralada.objects.procesado_diario(year=2024, month=7, variedad="maue")
+    #     print(resultado)
+    #     self.assertEquals(1,1)
