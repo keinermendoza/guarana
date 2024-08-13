@@ -219,7 +219,7 @@ UNFOLD = {
     "SITE_TITLE": _("Loja de Guaraná"),
     "SITE_SYMBOL": "settings",
     # "SHOW_HISTORY": True,
-    "DASHBOARD_CALLBACK": "core.views.get_extra_context",
+    # "DASHBOARD_CALLBACK": "core.views.get_extra_context",
     "SIDEBAR": {
         "show_search": False,  # Search in applications and models names
         "show_all_applications": False,  # Dropdown with all applications and models

@@ -9,7 +9,7 @@
 
 {% component "unfold/components/flex.html" with class="gap-8 mb-8 flex-col lg:flex-row" %}
     {% for stats in kpi %}
-        {% trans "Last 7 days" as label %}
+        {% trans "Mensal" as label %}
         {% component "unfold/components/card.html" with class="lg:w-1/3" label=label footer=stats.footer %}
             {% component "unfold/components/text.html" %}
                 {{ stats.title }}
@@ -22,8 +22,8 @@
     {% endfor %}
 {% endcomponent %}
 
-{% trans "Product performance in last 28 days" as title %}
-{% component "unfold/components/card.html" with class="mb-8" title=title %}
+{% comment %} {% trans "Product performance in last 28 days" as title %} {% endcomment %}
+{% component "unfold/components/card.html" with class="mb-8" title=main_graphic_bar_title %}
     {% component "unfold/components/chart/bar.html" with data=chart height=320 %}{% endcomponent %}
 {% endcomponent %}
 

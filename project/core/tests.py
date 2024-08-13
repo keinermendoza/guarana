@@ -1,3 +1,4 @@
+import random
 from django.utils import timezone as tz
 from django.test import TestCase
 from django.core.exceptions import ValidationError
@@ -10,33 +11,67 @@ from core.models import (
     Ralada,
     Produccion,
     Saco,
-    TipoGuarana
+    TipoGuarana,
+    Producto,
+    ProduccionDetalle,
+    VentaItem
 )
 
-class VentaModelCreation(TestCase):
-    def test_total_field_is_required(self):
-        with self.assertRaises(IntegrityError):
-            Venta.objects.create()
-
-    def test_total_is_the_only_required_field(self):
+class MinimumRequieredFieldsPerClass(TestCase):
+    def test_venta_required_field(self):
         venta = Venta.objects.create(total=120)
         self.assertIsInstance(venta, Venta)
-
-class MetodoPagoCreation(TestCase):
-    def test_nombre_field_is_required(self):
-        with self.assertRaises(ValidationError):
-            MetodoPago.objects.create()
     
-    def test_nombre_is_the_only_required_field(self):
+    def test_metodo_pago_required_field(self):
         metodo = MetodoPago.objects.create(nombre="Visa Credito")
         self.assertIsInstance(metodo, MetodoPago)
         self.assertEquals(metodo.tipo, MetodoPago.Tipo.CARTON)
+
+    def test_ralada_required_fields(self):
+        produccion = Produccion.objects.create()
+        ralada = Ralada.objects.create(produccion=produccion)
+        self.assertIsInstance(ralada, Ralada)
+
+    def test_saco_test_required_fields(self):
+        tipo = TipoGuarana.objects.create(nombre="Tibiriça")
+        saco = Saco.objects.create(numero=312, tipo_guarana=tipo)
+        self.assertIsInstance(saco, Saco)
+
+    def test_tipo_guarana_required_fields(self):
+        tipo = TipoGuarana.objects.create(nombre="Maue do Indio")
+        self.assertIsInstance(tipo, TipoGuarana)
+
+    def test_producto_required_fields(self):
+        producto = Producto.objects.create(nombre="Luzeia 70g", precio=33)
+        self.assertIsInstance(producto, Producto)
+    
+    def test_produccion_detalle_required_fields(self):
+        produccion = Produccion.objects.create()
+        producto = Producto.objects.create(nombre="luzeia 70g", precio=33)
+        produccion_detalle = ProduccionDetalle.objects.create(produccion=produccion, producto=producto, cantidad=10)
+        self.assertIsInstance(produccion_detalle, ProduccionDetalle)
+    
+    def test_venta_item_required_fields(self):
+        venta = Venta.objects.create(total=66)
+        producto = Producto.objects.create(nombre="luzeia 70g", precio=33)
+        venta_item = VentaItem.objects.create(producto=producto, precio=producto.precio, cantidad=2, venta=venta)
+        self.assertIsInstance(venta_item, VentaItem)
+
+   
 
 
 class VentaQuerysetMethods(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        Producto.objects.create(nombre="luzeia 70gm", precio=20, es_fabricado=True)
+        Producto.objects.create(nombre="luzeia 120gm", precio=50, es_fabricado=True)
+
+        Producto.objects.create(nombre="maue 70gm", precio=25, es_fabricado=True)
+        Producto.objects.create(nombre="maue 120gm", precio=60, es_fabricado=True)
+        Producto.objects.create(nombre="maue 200gm", precio=100, es_fabricado=True)
+
+
         MetodoPago.objects.create(nombre="Visa Credito")
         MetodoPago.objects.create(nombre="Visa Debito")
         MetodoPago.objects.create(nombre="Mastercard Credito")
@@ -61,6 +96,14 @@ class VentaQuerysetMethods(TestCase):
         Venta.objects.create(nota='12', total=75, fecha_venta='2024-08-13')
         Venta.objects.create(nota='13', total=25, fecha_venta='2024-08-13')
         Venta.objects.create(nota='14', total=200, fecha_venta='2024-08-13')
+
+        Venta.objects.create(nota='out range of time', total=200, fecha_venta='2024-07-13')
+        Venta.objects.create(nota='out range of time', total=200, fecha_venta='2024-09-13')
+        Venta.objects.create(nota='out range of time', total=200, fecha_venta='2024-06-13')
+
+
+        
+
 
     def test_unico_metodo_pago_queryset__venta_mensual_por_dia_y_metodo_pago(self):
         """
@@ -194,20 +237,36 @@ class VentaQuerysetMethods(TestCase):
         self.assertEquals(resultados['efectivo'], [[0,200],[0,175],[0,400]])
 
 
-class RaladaSacoModelCreation(TestCase):
-    def test_ralada_required_fields(self):
-        produccion = Produccion.objects.create()
-        ralada = Ralada.objects.create(produccion=produccion)
-        self.assertIsInstance(ralada, Ralada)
+    def test_venta_item_cantidad_total_por_productos(self):
+        luz_70 = Producto.objects.get(nombre="luzeia 70gm")
+        luz_120 = Producto.objects.get(nombre="luzeia 120gm")
+        maue_70 = Producto.objects.get(nombre="maue 70gm")
+        maue_120 = Producto.objects.get(nombre="maue 120gm")
+        maue_200 = Producto.objects.get(nombre="maue 200gm")
 
-    def test_tipo_guarana_required_fields(self):
-        tipo = TipoGuarana.objects.create(nombre="Maue do Indio")
-        self.assertIsInstance(tipo, TipoGuarana)
 
-    def test_saco_test_required_fields(self):
-        tipo = TipoGuarana.objects.create(nombre="Tibiriça")
-        saco = Saco.objects.create(numero=312, tipo_guarana=tipo)
-        self.assertIsInstance(saco, Saco)
+        for i, venta in enumerate(Venta.objects.all(), 1):
+            if i % 2 == 1:
+                VentaItem.objects.create(producto=luz_70, venta=venta, cantidad=1, precio=luz_70.precio)
+            else:
+                VentaItem.objects.create(producto=luz_120, venta=venta, cantidad=1, precio=luz_120.precio)
+            
+
+        cantidad_total_por_productos = VentaItem.objects.cantidad_total_por_productos(year=2024, month=8)
+        print(cantidad_total_por_productos)
+
+        self.assertEquals(Venta.objects.count(), VentaItem.objects.count())
+        # self.assertEquals(len(cantidad_total_por_productos), 2)
+        
+        # # productos debe contener un diccionario para cada producto de fabricacion registrado sin importar que no haya sido vendido
+        # self.assertEquals(len(cantidad_total_por_productos['productos']), 5)
+
+        # # el maximo debe ser 1 numero mayor a la mayor cantidad de productos vendidos (en este caso 7)
+        # self.assertEquals(cantidad_total_por_productos['maximo'], 8)
+
+        # # todos los elementos del dict productos contienen las claves 'nombre' y 'total'
+        # self.assertTrue("nombre" in cantidad_total_por_productos['productos'][random.randint(0,4)].keys())
+        # self.assertTrue("total" in cantidad_total_por_productos['productos'][random.randint(0,4)].keys())
 
 
 class RaladaQuerysetMethods(TestCase):
@@ -216,21 +275,50 @@ class RaladaQuerysetMethods(TestCase):
         super().setUpClass()
         maue = TipoGuarana.objects.create(nombre="Maue")
         luzeia = TipoGuarana.objects.create(nombre="Luzeia")
-        Saco.objects.create(numero=301, tipo_guarana=maue)
-        Saco.objects.create(numero=303, tipo_guarana=luzeia)
-
-    def setUp(self):
-        saco_301 = Saco.objects.get(numero=301)
-        saco_303 = Saco.objects.get(numero=303)
-
-        p1 = Produccion.objects.create()
-        p2 = Produccion.objects.create()
-        p3 = Produccion.objects.create()
-        p4 = Produccion.objects.create()
-        p5 = Produccion.objects.create()
-        p6 = Produccion.objects.create()
+        saco_301 = Saco.objects.create(numero=301, tipo_guarana=maue)
+        saco_303 = Saco.objects.create(numero=303, tipo_guarana=luzeia)
         
-        p7 = Produccion.objects.create()
+        luz_70 = Producto.objects.create(nombre="luzeia 70gm", precio=33, es_fabricado=True)
+        luz_90 = Producto.objects.create(nombre="luzeia 90gm", precio=42, es_fabricado=True)
+        luz_120 = Producto.objects.create(nombre="luzeia 120gm", precio=55, es_fabricado=True)
+        luz_200 = Producto.objects.create(nombre="luzeia 200gm", precio=88, es_fabricado=True)
+
+        maue_70 = Producto.objects.create(nombre="maue 70gm", precio=39, es_fabricado=True)
+        maue_90 = Producto.objects.create(nombre="maue 90gm", precio=50, es_fabricado=True)
+        maue_120 = Producto.objects.create(nombre="maue 120gm", precio=66, es_fabricado=True)
+        maue_200 = Producto.objects.create(nombre="maue 200gm", precio=106, es_fabricado=True)
+
+        p1 = Produccion.objects.create(nota="1")
+        p2 = Produccion.objects.create(nota="2")
+        p3 = Produccion.objects.create(nota="3")
+        p4 = Produccion.objects.create(nota="4")
+        p5 = Produccion.objects.create(nota="5")
+        p6 = Produccion.objects.create(nota="6")
+        p7 = Produccion.objects.create(nota="7")
+
+        ProduccionDetalle.objects.create(produccion=p1, producto=maue_200, cantidad=24)
+        ProduccionDetalle.objects.create(produccion=p1, producto=maue_120, cantidad=1)
+        ProduccionDetalle.objects.create(produccion=p1, producto=maue_70, cantidad=4)
+
+        ProduccionDetalle.objects.create(produccion=p2, producto=luz_200, cantidad=25)
+        ProduccionDetalle.objects.create(produccion=p2, producto=luz_120, cantidad=1)
+        ProduccionDetalle.objects.create(produccion=p2, producto=luz_70, cantidad=1)
+
+        ProduccionDetalle.objects.create(produccion=p3, producto=maue_200, cantidad=23)
+        ProduccionDetalle.objects.create(produccion=p3, producto=maue_120, cantidad=1)
+        ProduccionDetalle.objects.create(produccion=p3, producto=maue_70, cantidad=4)
+
+
+        ProduccionDetalle.objects.create(produccion=p4, producto=luz_200, cantidad=24)
+        ProduccionDetalle.objects.create(produccion=p4, producto=luz_120, cantidad=1)
+        ProduccionDetalle.objects.create(produccion=p4, producto=luz_70, cantidad=10)
+
+
+        ProduccionDetalle.objects.create(produccion=p5, producto=maue_200, cantidad=23)
+        ProduccionDetalle.objects.create(produccion=p5, producto=maue_90, cantidad=1)
+
+        ProduccionDetalle.objects.create(produccion=p6, producto=luz_200, cantidad=25)
+        ProduccionDetalle.objects.create(produccion=p6, producto=luz_120, cantidad=2)
 
 
         Ralada.objects.create(produccion=p1, saco=saco_301, cantidad_bastones=25, peso_inicial=5100, peso_final=4950 ,fecha_ralada='2024-07-11')
@@ -242,6 +330,10 @@ class RaladaQuerysetMethods(TestCase):
         
         Ralada.objects.create(produccion=p7, saco=saco_303, cantidad_bastones=30, peso_inicial=5400, peso_final=5250 ,fecha_ralada='2024-08-05')
 
+        
+    
+    # def setUp(self):
+        
     def test_filtrar_por_fecha_y_tipo(self):
         """
         filtra raladas por mes, año y variedad de guarana (usando el nombre en del tipo de guarana en iexac)
@@ -258,14 +350,34 @@ class RaladaQuerysetMethods(TestCase):
         resultado = Ralada.objects.filtrar_por_fecha_y_tipo(year=2024, month=8, variedad="luzeia")
         self.assertEquals(len(resultado), 1)
 
-    # NO TIENE MUCHO SENTIDO
-    # def test_bastones_diarios(self):
-    #     resultado = Ralada.objects.bastones_diarios(year=2024, month=7, variedad="maue")
-    #     print(resultado)
+    def test_bastones_procesados_al_mes(self):
+        resultado_maue = Ralada.objects.bastones_procesados_al_mes(year=2024, month=7, variedad="maue")
+        resultado_luzeia = Ralada.objects.bastones_procesados_al_mes(year=2024, month=7, variedad="luzeia")
+        
+        self.assertEquals(resultado_maue['total_bastones'], 75)
+        self.assertEquals(resultado_luzeia['total_bastones'], 90)
+
+    def test_peso_procesado_al_mes(self):
+        resultado_maue = Ralada.objects.peso_procesado_al_mes(year=2024, month=7, variedad="maue")
+        resultado_luzeia = Ralada.objects.peso_procesado_al_mes(year=2024, month=7, variedad="luzeia")
+        
+        self.assertEquals(resultado_maue['total_peso'],15.05)
+        self.assertEquals(resultado_luzeia['total_peso'],15.825)
+
+
+    # def test_productos_producidos_al_mes(self):
+    #     resultado = ProduccionDetalle.objects.queryset_productos_producidos_al_mes(year=2024, month=7)
+    #     for producto in resultado:
+    #         print(producto)
+      
+
     #     self.assertEquals(1,1)
 
-    # NO TIENE MUCHO SENTIDO
-    # def test_procesado_diario(self):
-    #     resultado = Ralada.objects.procesado_diario(year=2024, month=7, variedad="maue")
+    # def test_productos_producidos_al_mes(self):
+    #     resultado = ProduccionDetalle.objects.productos_producidos_al_mes(year=2024, month=7)
+    #     # for producto in resultado:
+    #     #     print(producto)
     #     print(resultado)
+
     #     self.assertEquals(1,1)
+

@@ -4,7 +4,9 @@ from django.utils import timezone as tz
 
 from .querysets import (
     VentaQueryset,
-    RaladaQueryset
+    RaladaQueryset,
+    ProduccionDetalleQueryset,
+    VentaItemQueryset
 )
 
 class TipoGuarana(models.Model):
@@ -55,7 +57,8 @@ class Producto(models.Model):
     nombre = models.CharField(max_length=200)
     descripcion = models.TextField(blank=True, null=True)
     precio = models.DecimalField(max_digits=10, decimal_places=2, blank=True)
-
+    es_fabricado = models.BooleanField(default=False)
+    
     def __str__(self) -> str:
         return self.nombre
 
@@ -85,7 +88,7 @@ class VentaItem(models.Model):
     cantidad = models.PositiveIntegerField()
     precio = models.DecimalField(max_digits=10, decimal_places=2, blank=True)
     fecha_registro = models.DateTimeField(auto_now=True)
-
+    objects = VentaItemQueryset.as_manager()
     def __str__(self) -> str:
         return f'{self.cantidad} x {self.producto}'
     
@@ -166,6 +169,8 @@ class ProduccionDetalle(models.Model):
     producto = models.ForeignKey(Producto, related_name="producciones", on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
     fecha_registro = models.DateTimeField(auto_now=True)
+
+    objects = ProduccionDetalleQueryset.as_manager()
 
 
     def __str__(self) -> str:

@@ -1,3 +1,5 @@
+import random
+
 from django import forms
 from django.db import models
 from django.urls import path
@@ -94,15 +96,26 @@ class InventarioAdmin(ModelAdmin):
         """
         custom view for show daily amounts
         """
+        year = 2024
+        month = 8
 
-        data_ventas = Venta.objects.data_for_chartjs()
+        data_ventas = Venta.objects.data_grafico_bar_chartjs(year=year, month=month)
+        totales = Venta.objects.totales_mensuales(year=year, month=month)
+
+        cantidad_total_por_productos = VentaItem.objects.cantidad_total_por_productos(year=year, month=month)
+
+        # for cantidad in cantidad_total_por_productos:
+
+
+
+        print(data_ventas, totales)
         context = self.admin_site.each_context(request)
         context.update(
             {
                 "navigation": [
-                    {"title": _("Hoje"), "link": reverse_lazy('admin:resumen_diario'), "active":reverse_lazy('admin:resumen_diario') == request.path_info},
-                    {"title": _("Semana"), "link": reverse_lazy('admin:resumen_semanal'), "active":reverse_lazy('admin:resumen_semanal') == request.path_info},
-                    {"title": _("Mes"), "link": reverse_lazy('admin:resumen_mensual'), "active":reverse_lazy('admin:resumen_mensual') == request.path_info},
+                    {"title": _("Vendas"), "link": reverse_lazy('admin:resumen_diario'), "active":reverse_lazy('admin:resumen_diario') == request.path_info},
+                    {"title": _("Produçao"), "link": reverse_lazy('admin:resumen_semanal'), "active":reverse_lazy('admin:resumen_semanal') == request.path_info},
+                    # {"title": _("Mes"), "link": reverse_lazy('admin:resumen_mensual'), "active":reverse_lazy('admin:resumen_mensual') == request.path_info},
                 ],
                 "filters": [
                     {"title": _("All"), "link": "#", "active": True},
@@ -111,62 +124,58 @@ class InventarioAdmin(ModelAdmin):
                         "link": "#",
                     },
                 ],
+                "main_graphic_bar_title": "Vendas Diarias Segum Metodo de Pago",
                 "kpi": [
                     {
-                        "title": "Product A Performance",
-                        "metric": "$1,234.56",
+                        "title": "Vendas no Cartão",
+                        "metric": f"R${totales['carton']}",
                         "footer": mark_safe(
-                            '<strong class="text-green-600 font-medium">+3.14%</strong>&nbsp;progress from last week'
-                        ),
-                        # "chart": json.dumps(
-                        #     {
-                        #         "labels": [WEEKDAYS[day % 7] for day in range(1, 28)],
-                        #         "datasets": [{"data": average, "borderColor": "#9333ea"}],
-                        #     }
-                        # ),
-                    },
-                    {
-                        "title": "Product B Performance",
-                        "metric": "$1,234.56",
-                        "footer": mark_safe(
-                            '<strong class="text-green-600 font-medium">+3.14%</strong>&nbsp;progress from last week'
+                            '<strong class="text-green-600 font-medium">Inclui vendas de todos os tipos de Cartão</strong>'
                         ),
                     },
                     {
-                        "title": "Product C Performance",
-                        "metric": "$1,234.56",
+                        "title": "Vendas em Dinheiro",
+                        "metric": f"R${totales['efectivo']}",
                         "footer": mark_safe(
-                            '<strong class="text-green-600 font-medium">+3.14%</strong>&nbsp;progress from last week'
+                            '<strong class="text-green-600 font-medium">Vendas em Dinheiro</strong>'
+                        ),
+                    },
+                    {
+                        "title": "Vendas em Pix",
+                        "metric": f"R${totales['efectivo']}",
+                        "footer": mark_safe(
+                            '<strong class="text-green-600 font-medium">Vendas em Pix</strong>'
                         ),
                     },
                 ],
-                # "progress": [
-                #     {
-                #         "title": "Social marketing e-book",
-                #         "description": " $1,234.56",
-                #         "value": random.randint(10, 90),
-                #     },
-                #     {
-                #         "title": "Freelancing tasks",
-                #         "description": " $1,234.56",
-                #         "value": random.randint(10, 90),
-                #     },
-                #     {
-                #         "title": "Development coaching",
-                #         "description": " $1,234.56",
-                #         "value": random.randint(10, 90),
-                #     },
-                #     {
-                #         "title": "Product consulting",
-                #         "description": " $1,234.56",
-                #         "value": random.randint(10, 90),
-                #     },
-                #     {
-                #         "title": "Other income",
-                #         "description": " $1,234.56",
-                #         "value": random.randint(10, 90),
-                #     },
-                # ],
+                "progress": [
+                    *cantidad_total_por_productos
+                    # {
+                    #     "title": "Social marketing e-book",
+                    #     "description": " $1,234.56",
+                    #     "value": random.randint(10, 90),
+                    # },
+                    # {
+                    #     "title": "Freelancing tasks",
+                    #     "description": " $1,234.56",
+                    #     "value": random.randint(10, 90),
+                    # },
+                    # {
+                    #     "title": "Development coaching",
+                    #     "description": " $1,234.56",
+                    #     "value": random.randint(10, 90),
+                    # },
+                    # {
+                    #     "title": "Product consulting",
+                    #     "description": " $1,234.56",
+                    #     "value": random.randint(10, 90),
+                    # },
+                    # {
+                    #     "title": "Other income",
+                    #     "description": " $1,234.56",
+                    #     "value": random.randint(10, 90),
+                    # },
+                ],
                 "chart": json.dumps(
                     {
                         "labels": data_ventas['fechas'],
