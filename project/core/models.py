@@ -62,6 +62,7 @@ class Producto(models.Model):
     def __str__(self) -> str:
         return self.nombre
 
+# error metodo_pago must to reference UsoMetodoPago as ForeingKey instead MetodoPago as ManyToMany
 class Venta(models.Model):
     metodo_pago = models.ManyToManyField(MetodoPago, related_name="ventas")
     nota = models.TextField(blank=True, null=True)
