@@ -253,7 +253,6 @@ class VentaQuerysetMethods(TestCase):
             
 
         cantidad_total_por_productos = VentaItem.objects.cantidad_total_por_productos(year=2024, month=8)
-        print(cantidad_total_por_productos)
 
         self.assertEquals(Venta.objects.count(), VentaItem.objects.count())
         # self.assertEquals(len(cantidad_total_por_productos), 2)
@@ -364,7 +363,11 @@ class RaladaQuerysetMethods(TestCase):
         self.assertEquals(resultado_maue['total_peso'],15.05)
         self.assertEquals(resultado_luzeia['total_peso'],15.825)
 
+    def test_ralada_peso_y_cantidades_procesadas(self):
+        result1 = Ralada.objects.peso_y_cantidades_procesadas(year=2024, month=7)
+        print(result1)
 
+        self.assertEquals(1,1)
     # def test_productos_producidos_al_mes(self):
     #     resultado = ProduccionDetalle.objects.queryset_productos_producidos_al_mes(year=2024, month=7)
     #     for producto in resultado:

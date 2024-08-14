@@ -26,7 +26,7 @@
 {% block content %}
     {% include "unfold/helpers/messages.html" %}
     
-    <div hx-get={% url 'admin:resumen_diario' %} hx-swap="outerHTML transition:true" hx-trigger="load"></div>
+    <div hx-get={% url 'admin:vendas' %} hx-swap="outerHTML transition:true" hx-trigger="load"></div>
   
    
 {% endblock %}

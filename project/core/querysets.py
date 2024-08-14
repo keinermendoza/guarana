@@ -3,6 +3,7 @@ from collections import defaultdict
 from decimal import Decimal
 from django.db import models
 from django.db.models.functions import Cast
+from django.utils.safestring import mark_safe
 
 from django.utils import timezone as tz
 
@@ -145,8 +146,7 @@ class VentaItemQueryset(models.QuerySet):
         month: int =tz.now().month,
     ):
         """
-        procesa la informacion en un formato facilmente
-        usable para el componente 'progress'
+        FORMATEANDO data para grafico 'progress'
         """
         from .models import Producto
         queryset = self.queryset_cantidad_total_por_productos(year=year, month=month)
@@ -159,12 +159,13 @@ class VentaItemQueryset(models.QuerySet):
 
         for item in queryset:
             title = item["producto__nombre"]
-            value = (item["cantidad_vendida"] / cantidad_maxima) * 100 
+            cantidad = item["cantidad_vendida"]
+            value = int(cantidad / cantidad_maxima * 100) 
 
             productos.append({
-                "title":title,
+                "title":title.capitalize(),
                 "value":value,
-                "description": f"{value} Unidades"
+                "description": f"{cantidad} Unidades"
             })
 
             try:
@@ -175,17 +176,14 @@ class VentaItemQueryset(models.QuerySet):
 
         for item in productos_no_vendidos:
             productos.append({
-                "title":item,
+                "title":item.capitalize(),
                 "value":0,
                 "description":'0 Unidades'
             })
         
-        # items = sorted(productos, key=lambda x: x['value'], reverse=True)
+        productos = sorted(productos, key=lambda x: x['title'])
         return productos
-        # return {
-        #     "productos": productos,
-        #     # "maximo": cantidad_maxima
-        # }
+        
 
 class ProduccionDetalleQueryset(models.QuerySet):
     def queryset_productos_producidos_al_mes(
@@ -243,6 +241,33 @@ class ProduccionDetalleQueryset(models.QuerySet):
         return sorted(productos, key=lambda x: x['nombre'])
     
 class RaladaQueryset(models.QuerySet):
+    def peso_y_cantidades_procesadas(
+        self, 
+        year=tz.now().year,
+        month=tz.now().month,
+    ):
+        """
+        FORMATEANDO data para "kpi"
+        TOTAL peso y cantidad de bastones procesados para todas las variedades
+        """
+        queryset =  self.filter(fecha_ralada__year=year, fecha_ralada__month=month)\
+            .annotate(nombre=models.F('saco__tipo_guarana__nombre'))\
+            .values('nombre')\
+            .annotate(
+                total_bastones=models.Sum('cantidad_bastones'),
+                total_peso=Cast(models.Sum('peso_inicial'), models.FloatField()) / 1000
+        )
+        produccion = []   
+        for item in queryset:
+            produccion.append({
+                "title":item["nombre"].title(),
+                "metric":f"{item['total_bastones']} Bastões Procesados",
+                "footer": mark_safe(f'<strong class="text-green-600 font-medium">Tem se proccesado {item["total_peso"]} kg do {item["nombre"]} neste Mes</strong>')
+            })
+        return produccion
+
+
+
     def filtrar_por_fecha_y_tipo(
         self, 
         year=tz.now().year,
@@ -250,8 +275,9 @@ class RaladaQueryset(models.QuerySet):
         variedad="luzeia",
     ):
         """
+        metodo HELPER
         filtra las raladas por mes, año y variedad.
-        dia: anota una version corta de la fecha 
+        
         """
         return self.filter(saco__tipo_guarana__nombre__iexact=variedad, fecha_ralada__year=year, fecha_ralada__month=month)
    
@@ -262,13 +288,11 @@ class RaladaQueryset(models.QuerySet):
         variedad="luzeia",
     ):
         """
-        lista con cantidad de bastones procesados mensuales
-        para un mes, año y variedad  
+        Todal de bastones procesados para una variedad especifica
         """
         return self.filtrar_por_fecha_y_tipo(year=year, month=month, variedad=variedad)\
             .aggregate(total_bastones=models.Sum('cantidad_bastones'))
 
-    #MEJORAR
     def peso_procesado_al_mes(
         self,
         year=tz.now().year,
@@ -276,12 +300,9 @@ class RaladaQueryset(models.QuerySet):
         variedad="luzeia",
     ):
         """
-        lista kg de guarana bastones procesado diario
-        para un mes, año y variedad  
+        total Kg procesados para una variedad especifica 
         """
         return self.filtrar_por_fecha_y_tipo(year=year, month=month, variedad=variedad)\
             .aggregate(total_peso=Cast(models.Sum('peso_inicial'), models.FloatField()) / 1000)
             
-            # .values('fecha_ralada')\
-            # .annotate(kg_procesados=Cast(models.Sum('peso_inicial'), models.FloatField()) / 1000)\
-            # .order_by('fecha_ralada')
+           

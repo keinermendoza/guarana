@@ -15,6 +15,8 @@ from django.utils.text import (
     format_lazy,
 )
 
+
+
 class WysiwygWidget(forms.Widget):
     template_name = "admin/forms/wysiwyg.html"
 

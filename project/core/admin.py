@@ -48,7 +48,16 @@ from unfold.admin import (
     StackedInline
 ) 
 
-from .views import get_extra_context
+# from .views import get_extra_context
+
+def get_home_navegation(request):
+    return  [
+        {"title": _("Vendas"), "link": reverse_lazy('admin:vendas'), "active":reverse_lazy('admin:vendas') == request.path_info},
+        {"title": _("Produção"), "link": reverse_lazy('admin:producao'), "active":reverse_lazy('admin:producao') == request.path_info},
+    ]
+    
+    
+
 
 @admin.register(CompraVidros)
 class CompraVidrosAdmin(ModelAdmin):
@@ -84,46 +93,40 @@ class InventarioAdmin(ModelAdmin):
         """
         urls = super().get_urls()
         my_urls = [
-            path("diario/", self.admin_site.admin_view(self.resumen_diario), name='resumen_diario'),
-            path("semanal/", self.admin_site.admin_view(self.resumen_semanal), name='resumen_semanal'),
+            path("vendas/", self.admin_site.admin_view(self.vendas), name='vendas'),
+            path("producao/", self.admin_site.admin_view(self.producao), name='producao'),
             path("mensal/", self.admin_site.admin_view(self.resumen_mensual), name='resumen_mensual'),
 
         ]
         return my_urls + urls
     
 
-    def resumen_diario(self, request, *args, **kwargs):
+    def vendas(self, request, *args, **kwargs):
         """
         custom view for show daily amounts
         """
         year = 2024
         month = 8
 
+        
+        # peso = Ralada.objects.peso_procesado_al_mes(year=year, month=month, variedad="maue")
+
+        # bastones = Ralada.objects.bastones_procesados_al_mes(year=year, month=month, variedad="luzeia")
+        # peso = Ralada.objects.peso_procesado_al_mes(year=year, month=month, variedad="maue")
+
+        # print(peso)
+       
+
         data_ventas = Venta.objects.data_grafico_bar_chartjs(year=year, month=month)
         totales = Venta.objects.totales_mensuales(year=year, month=month)
-
         cantidad_total_por_productos = VentaItem.objects.cantidad_total_por_productos(year=year, month=month)
-
-        # for cantidad in cantidad_total_por_productos:
-
-
-
-        print(data_ventas, totales)
+        navegation = get_home_navegation(request)
+        
         context = self.admin_site.each_context(request)
         context.update(
             {
-                "navigation": [
-                    {"title": _("Vendas"), "link": reverse_lazy('admin:resumen_diario'), "active":reverse_lazy('admin:resumen_diario') == request.path_info},
-                    {"title": _("Produçao"), "link": reverse_lazy('admin:resumen_semanal'), "active":reverse_lazy('admin:resumen_semanal') == request.path_info},
-                    # {"title": _("Mes"), "link": reverse_lazy('admin:resumen_mensual'), "active":reverse_lazy('admin:resumen_mensual') == request.path_info},
-                ],
-                "filters": [
-                    {"title": _("All"), "link": "#", "active": True},
-                    {
-                        "title": _("New"),
-                        "link": "#",
-                    },
-                ],
+                
+                "navigation": navegation,
                 "main_graphic_bar_title": "Vendas Diarias Segum Metodo de Pago",
                 "kpi": [
                     {
@@ -148,33 +151,9 @@ class InventarioAdmin(ModelAdmin):
                         ),
                     },
                 ],
+                "progress_section_title":"Produtos Vendidos Neste Mes",
                 "progress": [
                     *cantidad_total_por_productos
-                    # {
-                    #     "title": "Social marketing e-book",
-                    #     "description": " $1,234.56",
-                    #     "value": random.randint(10, 90),
-                    # },
-                    # {
-                    #     "title": "Freelancing tasks",
-                    #     "description": " $1,234.56",
-                    #     "value": random.randint(10, 90),
-                    # },
-                    # {
-                    #     "title": "Development coaching",
-                    #     "description": " $1,234.56",
-                    #     "value": random.randint(10, 90),
-                    # },
-                    # {
-                    #     "title": "Product consulting",
-                    #     "description": " $1,234.56",
-                    #     "value": random.randint(10, 90),
-                    # },
-                    # {
-                    #     "title": "Other income",
-                    #     "description": " $1,234.56",
-                    #     "value": random.randint(10, 90),
-                    # },
                 ],
                 "chart": json.dumps(
                     {
@@ -204,57 +183,79 @@ class InventarioAdmin(ModelAdmin):
                         ],
                     }
                 ),
-                "performance": [
-                    {
-                        "title": _("Last week revenue"),
-                        "metric": "$1,234.56",
-                        "footer": mark_safe(
-                            '<strong class="text-green-600 font-medium">+3.14%</strong>&nbsp;progress from last week'
-                        ),
-                        # "chart": json.dumps(
-                        #     {
-                        #         "labels": [WEEKDAYS[day % 7] for day in range(1, 28)],
-                        #         "datasets": [
-                        #             {"data": performance_positive, "borderColor": "#9333ea"}
-                        #         ],
-                        #     }
-                        # ),
-                    },
-                    {
-                        "title": _("Last week expenses"),
-                        "metric": "$1,234.56",
-                        "footer": mark_safe(
-                            '<strong class="text-green-600 font-medium">+3.14%</strong>&nbsp;progress from last week'
-                        ),
-                        # "chart": json.dumps(
-                        #     {
-                        #         "labels": [WEEKDAYS[day % 7] for day in range(1, 28)],
-                        #         "datasets": [
-                        #             {"data": performance_negative, "borderColor": "#f43f5e"}
-                        #         ],
-                        #     }
-                        # ),
-                    },
-                ],
+               
             },
         )
 
         resp = render(request, self.custom_template, context)
         return trigger_client_event(resp, "reload_charts", after="swap")
-    def resumen_semanal(self, request, *args, **kwargs):
+    
+    def producao(self, request, *args, **kwargs):
         """
         custom view for show daily amounts
         """
+        year = 2024
+        month = 8
+        produccion = Ralada.objects.peso_y_cantidades_procesadas(year=year, month=7)
+
+        data_ventas = Venta.objects.data_grafico_bar_chartjs(year=year, month=month)
+        totales = Venta.objects.totales_mensuales(year=year, month=month)
+        cantidad_total_por_productos = VentaItem.objects.cantidad_total_por_productos(year=year, month=month)
+        navegation = get_home_navegation(request)
+        
         context = self.admin_site.each_context(request)
-        context = get_extra_context(request, context)
+        context.update(
+            {
+                
+                "navigation": navegation,
+                "main_graphic_bar_title": "Vendas Diarias Segum Metodo de Pago",
+                "kpi": [
+                    *produccion
+                ],
+                "progress_section_title":"Produtos Vendidos Neste Mes",
+                "progress": [
+                    *cantidad_total_por_productos
+                ],
+                "chart": json.dumps(
+                    {
+                        "labels": data_ventas['fechas'],
+                        "datasets": [
+                            {
+                                "label": "Dinheiro",
+                                "data": data_ventas['efectivo'],
+                                "borderRadius":5,
+                                "barThickness": 10,
+                                "backgroundColor": "#f0abfc",
+                            },
+                            {
+                                "label": "Cartão",
+                                "data": data_ventas['carton'],
+                                "borderRadius":5,
+                                "barThickness": 10,
+                                "backgroundColor": "#9333ea",
+                            },
+                            {
+                                "label": "Pix",
+                                "data": data_ventas['pix'],
+                                "borderRadius":5,
+                                "barThickness": 10,
+                                "backgroundColor": "#f43f5e",
+                            },
+                        ],
+                    }
+                ),
+               
+            },
+        )
+
         resp = render(request, self.custom_template, context)
         return trigger_client_event(resp, "reload_charts", after="swap")
+    
     def resumen_mensual(self, request, *args, **kwargs):
         """
         custom view for show daily amounts
         """
         context = self.admin_site.each_context(request)
-        context = get_extra_context(request, context)
         resp = render(request, self.custom_template, context)
         return trigger_client_event(resp, "reload_charts", after="swap")
 @admin.register(AnotacionInventario)
