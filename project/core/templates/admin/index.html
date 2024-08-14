@@ -18,6 +18,8 @@
 
 {% block extrahead %}
 <script src="{% static 'admin/js/reload_charts.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+
     {% if plausible_domain %}
         <script defer data-domain="{{ plausible_domain }}" src="https://plausible.io/js/script.js"></script>
     {% endif %}    

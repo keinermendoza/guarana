@@ -105,18 +105,13 @@ class InventarioAdmin(ModelAdmin):
         """
         custom view for show daily amounts
         """
+        table_template = "admin/components/table_ventas.html"
         year = 2024
         month = 8
 
-        
-        # peso = Ralada.objects.peso_procesado_al_mes(year=year, month=month, variedad="maue")
-
-        # bastones = Ralada.objects.bastones_procesados_al_mes(year=year, month=month, variedad="luzeia")
-        # peso = Ralada.objects.peso_procesado_al_mes(year=year, month=month, variedad="maue")
-
-        # print(peso)
+        ventas = Venta.objects.all()
        
-
+        
         data_ventas = Venta.objects.data_grafico_bar_chartjs(year=year, month=month)
         totales = Venta.objects.totales_mensuales(year=year, month=month)
         cantidad_total_por_productos = VentaItem.objects.cantidad_total_por_productos(year=year, month=month)
@@ -125,7 +120,8 @@ class InventarioAdmin(ModelAdmin):
         context = self.admin_site.each_context(request)
         context.update(
             {
-                
+                "table_template": table_template,
+                "table_context":ventas,
                 "navigation": navegation,
                 "main_graphic_bar_title": "Vendas Diarias Segum Metodo de Pago",
                 "kpi": [

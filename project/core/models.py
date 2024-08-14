@@ -76,11 +76,15 @@ class Venta(models.Model):
         verbose_name_plural = "Ventas"
 
     @property
-    def fecha_venta_corta(self) -> str:
+    def fecha_corta(self) -> str:
         return self.fecha_venta.strftime("%d/%m/%Y")
     
     def __str__(self) -> str:
-        return f"R$ {self.total} dia {self.fecha_venta_corta}"
+        return f"{self.fecha_corta}  {self.total}"
+    
+    @property
+    def title(self):
+        return f"Venta dia {self.__str__()}"
 
 class VentaItem(models.Model):
     venta = models.ForeignKey(Venta, related_name='items', on_delete=models.CASCADE)
@@ -91,6 +95,10 @@ class VentaItem(models.Model):
     objects = VentaItemQueryset.as_manager()
     def __str__(self) -> str:
         return f'{self.cantidad} x {self.producto}'
+    
+    @property
+    def total(self):
+        return float(self.precio * self.cantidad)
     
     class Meta:
         verbose_name = "Item Vendido"
