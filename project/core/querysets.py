@@ -2,7 +2,7 @@ from typing import Iterable
 from collections import defaultdict
 from decimal import Decimal
 from django.db import models
-from django.db.models.functions import Cast
+from django.db.models.functions import Cast, Coalesce
 from django.utils.safestring import mark_safe
 
 from django.utils import timezone as tz
@@ -14,17 +14,25 @@ METODO_PAGO_CARTON = "C"
 
 
 class VentaQueryset(models.QuerySet):
-    def venta_diaria(
-        self,
-        year: int = tz.now().year,
-        month: int = tz.now().month,
-    ) -> dict[str, list[Decimal | str]]:
+    def cobros_en_ventas_segun_metodo_de_pago(
+        self, 
+        year: int,
+        month: int,
+    ) -> models.QuerySet[dict]:
         """
-        regresa el total vendido en un diccionario de listas
-        las keys son los tipos de metodos
-        los items de las listas representan la venta total diaria 
+        cobros en ventas segun metodos de pago
+        Nota: en ocaciones una venta se relaiza con mas de un metodo de pago
+        HELPER para funciones:
+        - kpi_stats_totales_por_metodo
+        - grafico_bar_metodos_de_pago_diario
+
         """
-        
+        queryset = self.filter(fecha_venta__year=year, fecha_venta__month=month)\
+            .annotate(metodo=models.F('usos_metodo_pago__metodo__tipo'))\
+            .values('fecha_venta', 'metodo')\
+            .annotate(total_ventas=models.Sum('usos_metodo_pago__monto', output_field=models.DecimalField()))\
+            .order_by('fecha_venta', 'metodo')
+
         fechas = []
         efectivo = []
         pix = []
@@ -35,12 +43,11 @@ class VentaQueryset(models.QuerySet):
 
         # Inicializar un diccionario para almacenar las ventas por fecha y método de pago
         ventas_por_metodo = defaultdict(lambda: {METODO_PAGO_EFECTIVO: 0, METODO_PAGO_PIX: 0, METODO_PAGO_CARTON: 0})
-        ventas = self.venta_mensual_por_dia_y_metodo_pago(year=year, month=month)
 
         # Recorrer las ventas y llenar el diccionario
-        for venta in ventas:
+        for venta in queryset:
             fecha = venta['fecha_venta'].strftime('%d/%m')
-            metodo_pago = venta['metodo_pago__tipo']
+            metodo_pago = venta['metodo']
             total_ventas = venta['total_ventas']
 
             # Añadir la fecha al set de fechas
@@ -69,37 +76,40 @@ class VentaQueryset(models.QuerySet):
 
         return ventas
     
-    def totales_mensuales(
+    def kpi_stats_totales_por_metodo(
         self,
         year: int = tz.now().year,
         month: int = tz.now().month
     ) -> dict[str, Decimal]:
         """
-        devuelve los totales mensuales
+        devuelve los totales mensuales para cada metodo de pago
+        en formato para KPI
         """
         
-        totales = self.venta_diaria(year=year, month=month)
+        totales = self.cobros_en_ventas_segun_metodo_de_pago(year=year, month=month)
 
         carton = sum(totales["carton"])
         efectivo = sum(totales["efectivo"])
         pix = sum(totales["pix"])
 
+        
         return {
             'carton': carton,
             'efectivo':efectivo,
             'pix': pix
         }
     
-    def data_grafico_bar_chartjs(
+    def grafico_bar_metodos_de_pago_diario(
         self,
         year: int = tz.now().year,
         month: int = tz.now().month 
     ):
         """
-        regresa la data con el formato apropiado para usar
-        grafico de barras en chartjs
+        totales diarios por metodo de pago
+        con el formato apropiado para usar
+        GRAFICO DE BARRAS en chartjs
         """
-        totales = self.venta_diaria(year=year, month=month)
+        totales = self.cobros_en_ventas_segun_metodo_de_pago(year=year, month=month)
         carton = [[0, float(i)] for i in totales["carton"]]
         efectivo = [[0, float(i)] for i in totales["efectivo"]]
         pix = [[0, float(i)] for i in totales["pix"]]
@@ -111,48 +121,24 @@ class VentaQueryset(models.QuerySet):
             'fechas': totales['fechas']
         }
 
-    def venta_mensual_por_dia_y_metodo_pago(
-        self, 
-        year: int,
-        month: int,
-    ) -> models.QuerySet[dict]:
-        """
-        filtra las ventas por mes y año.
-        devuelve el total vendido diariamente por tipo de metodo de pago 
-        """
-        return self.filter(fecha_venta__year=year, fecha_venta__month=month)\
-             .values('fecha_venta', 'metodo_pago__tipo')\
-             .annotate(total_ventas=models.Sum('total', output_field=models.DecimalField()))\
-             .order_by('fecha_venta', 'metodo_pago__tipo')
+    
 
 class VentaItemQueryset(models.QuerySet):
-    def queryset_cantidad_total_por_productos(
+    def progress_chart_cantidad_total_por_productos(
         self, 
         year: int =tz.now().year,
         month: int =tz.now().month,
     ):
-        return self.filter(
+        queryset = self.filter(
             venta__fecha_venta__year=year,
             venta__fecha_venta__month=month,
-            producto__es_fabricado=True
         ).values(
             'producto__nombre',
         ).annotate(cantidad_vendida=models.Sum('cantidad'))\
         .order_by('-cantidad_vendida')
-    
-    def cantidad_total_por_productos(
-        self, 
-        year: int =tz.now().year,
-        month: int =tz.now().month,
-    ):
-        """
-        FORMATEANDO data para grafico 'progress'
-        """
+  
         from .models import Producto
-        queryset = self.queryset_cantidad_total_por_productos(year=year, month=month)
         cantidad_maxima = queryset[0]["cantidad_vendida"] + 1
-
-        
 
         productos = []
         productos_no_vendidos = list(Producto.objects.values_list('nombre', flat=True))
@@ -185,63 +171,125 @@ class VentaItemQueryset(models.QuerySet):
         return productos
         
 
-class ProduccionDetalleQueryset(models.QuerySet):
-    def queryset_productos_producidos_al_mes(
-        self, 
-        year: int =tz.now().year,
-        month: int =tz.now().month,
+    def grafico_bar_montos_productos_vendidos_mensual(
+        self,
+        year: int = tz.now().year,
+        month: int = tz.now().month 
     ):
         """
-        devuelve los totales producidos para cada producto
-        para un mes y año 
+        total mensual vendido por producto
+        con el formato apropiado para usar
+        GRAFICO DE BARRAS en chartjs
         """
-        return self.filter(
-            produccion__ralada__fecha_ralada__year=year,
-            produccion__ralada__fecha_ralada__month=month,
-            producto__es_fabricado=True
-        ).values(
-            'producto__nombre',
-            'producto__precio'
-        ).annotate(total_producido=models.Sum('cantidad')).order_by('producto__nombre')
-    
-    def productos_producidos_al_mes(
-        self, 
-        year: int =tz.now().year,
-        month: int =tz.now().month,
-    ):
-        from .models import Producto
-        queryset = self.queryset_productos_producidos_al_mes(year=year, month=month)
-        productos = []
-        productos_no_producidos = list(Producto.objects.values_list('nombre', flat=True))
+
+        queryset = self.filter(venta__fecha_venta__year=year, venta__fecha_venta__month=month)\
+            .annotate(
+                nombre=models.F('producto__nombre'),
+                monto=models.ExpressionWrapper(
+                    models.F('precio') * models.F('cantidad'),
+                    output_field=models.FloatField()
+                )
+            ).values('nombre')\
+            .annotate(
+                totales=models.Sum('monto')
+            ).order_by('producto', 'totales')
         
+        datasets = []
+
+        background_colors = ["#f0abfc", "#9333ea", "#f43f5e"]
+        for i, producto in enumerate(queryset):
+            index = i % len(background_colors)
+            
+            datasets.append({
+                "label": producto['nombre'].capitalize(),
+                "data":[producto['totales']],
+                "borderRdius":5,
+                "barThickness": 30,
+                "backgroundColor":background_colors[index],
+            })
+        return datasets
+        
+
+class ProductoQueryset(models.QuerySet):
+    def produccion_al_mes_progress_chart(
+        self, 
+        year: int =tz.now().year,
+        month: int =tz.now().month,    
+    ):
+        """
+        cantidades producidas al mes por producto
+        formato de data para PROGRESS CHART
+        """
+        queryset = self.filter(
+            es_fabricado=True
+        ).annotate(
+            valor=Cast(models.F('precio'), models.FloatField())
+        ).values(
+            'nombre',
+            'valor'
+        ).annotate(
+            total_producido=Coalesce(
+                models.Sum(
+                    'producciones__cantidad', 
+                    filter=models.Q(
+                        producciones__produccion__ralada__fecha_ralada__year=year, 
+                        producciones__produccion__ralada__fecha_ralada__month=month
+                    )
+                ),
+                models.Value(0)
+            )
+        ).order_by('-total_producido', 'nombre')
+
+        cantidad_maxima = queryset[0]["total_producido"] + 1
+        productos = []
         for item in queryset:
-            nombre = item["producto__nombre"]
-            precio = item["producto__precio"]
-            total = item["total_producido"]
+            value = int(item["total_producido"] / cantidad_maxima * 100) 
             
             productos.append({
-                "nombre":nombre,
-                "precio":precio,
-                "total":total
+                "title": f"{item['nombre'].capitalize()} R$ {item['valor']}",
+                "description":f"{item['total_producido']} produtos produzidos",
+                "value":value
             })
+        return productos
 
-            try:
-                index = productos_no_producidos.index(nombre)
-                productos_no_producidos.pop(index)
-            except:
-                pass
+    def cantidad_vendida_bar_chart(
+        self,
+        year: int =tz.now().year,
+        month: int =tz.now().month,   
+    ):
+        return self.values(
+            'nombre',
+        ).annotate(
+            fecha=models.F('detalles__venta__fecha_venta'),
+            ventas=Coalesce(
+                models.Sum(
+                    'detalles__cantidad', 
+                    filter=models.Q(
+                        detalles__venta__fecha_venta__year=year, 
+                        detalles__venta__fecha_venta__month=month
+                    )
+                ),
+                models.Value(0)
+            )
+        ).order_by('-ventas', 'nombre')
 
-        for item in productos_no_producidos:
+        cantidad_maxima = queryset[0]["ventas"] + 1
+
+        productos = []
+        for item in queryset:
+            title = item["nombre"]
+            cantidad = item["ventas"]
+            value = int(cantidad / cantidad_maxima * 100) 
+
             productos.append({
-                "nombre":item,
-                "precio":0,
-                "total":0
+                "title":title.capitalize(),
+                "value":value,
+                "description": f"{cantidad} Unidades"
             })
-        
-        return sorted(productos, key=lambda x: x['nombre'])
+        return productos
     
 class RaladaQueryset(models.QuerySet):
-    def peso_y_cantidades_procesadas(
+    def peso_y_cantidades_procesadas_kpi(
         self, 
         year=tz.now().year,
         month=tz.now().month,
@@ -265,44 +313,3 @@ class RaladaQueryset(models.QuerySet):
                 "footer": mark_safe(f'<strong class="text-green-600 font-medium">Tem se proccesado {item["total_peso"]} kg do {item["nombre"]} neste Mes</strong>')
             })
         return produccion
-
-
-
-    def filtrar_por_fecha_y_tipo(
-        self, 
-        year=tz.now().year,
-        month=tz.now().month,
-        variedad="luzeia",
-    ):
-        """
-        metodo HELPER
-        filtra las raladas por mes, año y variedad.
-        
-        """
-        return self.filter(saco__tipo_guarana__nombre__iexact=variedad, fecha_ralada__year=year, fecha_ralada__month=month)
-   
-    def bastones_procesados_al_mes(
-        self, 
-        year=tz.now().year,
-        month=tz.now().month,
-        variedad="luzeia",
-    ):
-        """
-        Todal de bastones procesados para una variedad especifica
-        """
-        return self.filtrar_por_fecha_y_tipo(year=year, month=month, variedad=variedad)\
-            .aggregate(total_bastones=models.Sum('cantidad_bastones'))
-
-    def peso_procesado_al_mes(
-        self,
-        year=tz.now().year,
-        month=tz.now().month,
-        variedad="luzeia",
-    ):
-        """
-        total Kg procesados para una variedad especifica 
-        """
-        return self.filtrar_por_fecha_y_tipo(year=year, month=month, variedad=variedad)\
-            .aggregate(total_peso=Cast(models.Sum('peso_inicial'), models.FloatField()) / 1000)
-            
-           

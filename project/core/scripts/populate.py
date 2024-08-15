@@ -7,7 +7,8 @@ from core.models import (
     Ralada,
     MetodoPago,
     Venta,
-    VentaItem
+    VentaItem,
+    UsoMetodoPago
 )
 # run the command: python manage.py runscript populate
 def run():
@@ -100,17 +101,17 @@ def run():
 
     for i, venta in enumerate(Venta.objects.all(), 1):
         if i % 2 == 1:
-            venta.metodo_pago.add(pix)
+            UsoMetodoPago.objects.create(venta=venta, monto=venta.total, metodo=pix)
             VentaItem.objects.create(producto=luz_70, venta=venta, cantidad=1, precio=luz_70.precio)
             VentaItem.objects.create(producto=maue_70, venta=venta, cantidad=1, precio=maue_70.precio)
 
 
         elif i % 3 == 0:
-            venta.metodo_pago.add(efectivo)
+            UsoMetodoPago.objects.create(venta=venta, monto=venta.total, metodo=efectivo)
             VentaItem.objects.create(producto=luz_120, venta=venta, cantidad=1, precio=luz_120.precio)
 
         else:
-            venta.metodo_pago.add(visa)
+            UsoMetodoPago.objects.create(venta=venta, monto=venta.total, metodo=visa)
             VentaItem.objects.create(producto=maue_200, venta=venta, cantidad=1, precio=maue_200.precio)
             VentaItem.objects.create(producto=maue_70, venta=venta, cantidad=1, precio=maue_70.precio)
 

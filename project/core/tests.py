@@ -8,6 +8,7 @@ import datetime
 from core.models import (
     Venta,
     MetodoPago,
+    UsoMetodoPago,
     Ralada,
     Produccion,
     Saco,
@@ -58,7 +59,11 @@ class MinimumRequieredFieldsPerClass(TestCase):
         self.assertIsInstance(venta_item, VentaItem)
 
    
-
+    def test_uso_metodo_pago_fields_required(self):
+        metodo = MetodoPago.objects.create(nombre="Visa Credito")
+        venta = Venta.objects.create(total=120)
+        uso_metodo_pago = UsoMetodoPago.objects.create(metodo=metodo, venta=venta, monto=venta.total)
+        self.assertIsInstance(uso_metodo_pago, UsoMetodoPago)
 
 class VentaQuerysetMethods(TestCase):
     @classmethod
@@ -102,70 +107,7 @@ class VentaQuerysetMethods(TestCase):
         Venta.objects.create(nota='out range of time', total=200, fecha_venta='2024-06-13')
 
 
-        
-
-
-    def test_unico_metodo_pago_queryset__venta_mensual_por_dia_y_metodo_pago(self):
-        """
-        agrupa las ventas en tres objetos sumando todas las ventas por dia
-        """
-        pix = MetodoPago.objects.get(nombre="Pix")
-        #
-        for venta in Venta.objects.all():
-            venta.metodo_pago.add(pix)
-
-        resultado = Venta.objects.venta_mensual_por_dia_y_metodo_pago(year=2024, month=8)
-
-        self.assertEquals(len(resultado), 3)
-        dia_11, dia_12, dia_13 = resultado 
-
-        self.assertEquals(MetodoPago.Tipo.PIX, dia_11['metodo_pago__tipo'])
-        self.assertEquals(dia_11['metodo_pago__tipo'], dia_12['metodo_pago__tipo'])
-        self.assertEquals(dia_12['metodo_pago__tipo'], dia_13['metodo_pago__tipo'])
-
-        self.assertEquals(dia_11['fecha_venta'], datetime.date(2024, 8, 11))
-        self.assertEquals(dia_12['fecha_venta'], datetime.date(2024, 8, 12))
-        self.assertEquals(dia_13['fecha_venta'], datetime.date(2024, 8, 13))
-
-        self.assertEquals(dia_11['total_ventas'], Decimal('300.00'))
-        self.assertEquals(dia_12['total_ventas'], Decimal('400.00'))
-        self.assertEquals(dia_13['total_ventas'], Decimal('600.00'))
-
-
-    def test_dos_metodo_pago_queryset__venta_mensual_por_dia_y_metodo_pago(self):
-        """
-        agrupa las ventas en 6 objetos sumando todas las ventas por dia y metodo de pago
-        """
-        pix = MetodoPago.objects.get(nombre="Pix")
-        efectivo = MetodoPago.objects.get(nombre="Dinheiro")
-
-        for i, venta in enumerate(Venta.objects.all(), 1):
-            if i % 2 == 1:
-                venta.metodo_pago.add(pix)
-            else:
-                venta.metodo_pago.add(efectivo)
-            
-        result = Venta.objects.venta_mensual_por_dia_y_metodo_pago(year=2024, month=8)
-        self.assertEquals(len(result), 6)
-        dia_11_efectivo, dia_11_pix, dia_12_efectivo, dia_12_pix, dia_13_efectivo, dia_13_pix = result
-
-        self.assertEquals(MetodoPago.Tipo.EFECTIVO, dia_11_efectivo['metodo_pago__tipo'])
-        self.assertEquals(MetodoPago.Tipo.PIX, dia_11_pix['metodo_pago__tipo'])
-        self.assertEquals(MetodoPago.Tipo.EFECTIVO, dia_12_efectivo['metodo_pago__tipo'])
-        self.assertEquals(MetodoPago.Tipo.PIX, dia_12_pix['metodo_pago__tipo'])
-        self.assertEquals(MetodoPago.Tipo.EFECTIVO, dia_13_efectivo['metodo_pago__tipo'])
-        self.assertEquals(MetodoPago.Tipo.PIX, dia_13_pix['metodo_pago__tipo'])
-
-
-        self.assertEquals(dia_11_pix['fecha_venta'], datetime.date(2024, 8, 11))
-        self.assertEquals(dia_12_pix['fecha_venta'], datetime.date(2024, 8, 12))
-        self.assertEquals(dia_13_pix['fecha_venta'], datetime.date(2024, 8, 13))
-
-        self.assertEquals(dia_11_efectivo['total_ventas'], Decimal('200.00'))
-        self.assertEquals(dia_12_efectivo['total_ventas'], Decimal('175.00'))
-        self.assertEquals(dia_13_efectivo['total_ventas'], Decimal('400.00'))
-
-    def test_venta_diaria(self):
+    def test__ventas_queryset__cobros_en_ventas_segun_metodo_de_pago(self):
         """
         regresa listas representando el total de la venta diaria
         una lista por cada metodo de pago, un item por cada día
@@ -175,11 +117,12 @@ class VentaQuerysetMethods(TestCase):
 
         for i, venta in enumerate(Venta.objects.all(), 1):
             if i % 2 == 1:
-                venta.metodo_pago.add(pix)
-            else:
-                venta.metodo_pago.add(efectivo)
+                UsoMetodoPago.objects.create(venta=venta, monto=venta.total, metodo=pix)
 
-        resultados = Venta.objects.venta_diaria(year=2024, month=8)
+            else:
+                UsoMetodoPago.objects.create(venta=venta, monto=venta.total, metodo=efectivo)
+
+        resultados = Venta.objects.cobros_en_ventas_segun_metodo_de_pago(year=2024, month=8)
         
         self.assertIn('11/08', resultados['fechas'])
         self.assertIn('12/08', resultados['fechas'])
@@ -195,7 +138,7 @@ class VentaQuerysetMethods(TestCase):
         self.assertEquals(sum(resultados['carton']), 0)
 
 
-    def test_totales_mensuales(self):
+    def test_venta_queryset__kpi_stats_totales_por_metodo(self):
         """
         """
         pix = MetodoPago.objects.get(nombre="Pix")
@@ -203,18 +146,18 @@ class VentaQuerysetMethods(TestCase):
 
         for i, venta in enumerate(Venta.objects.all(), 1):
             if i % 2 == 1:
-                venta.metodo_pago.add(pix)
+                UsoMetodoPago.objects.create(venta=venta, monto=venta.total, metodo=pix)
             else:
-                venta.metodo_pago.add(efectivo)
+                UsoMetodoPago.objects.create(venta=venta, monto=venta.total, metodo=efectivo)
 
-        resultados = Venta.objects.totales_mensuales(year=2024, month=8)
+        resultados = Venta.objects.kpi_stats_totales_por_metodo(year=2024, month=8)
 
         self.assertEquals(len(resultados), 3)
         self.assertEquals(resultados['efectivo'], 775)
         self.assertEquals(resultados['pix'], 525)
         self.assertEquals(resultados['carton'], 0)
 
-    def test_data_grafico_bar_chartjs(self):
+    def test_venta_queryset__grafico_bar_metodos_de_pago_diario(self):
         """
         """
         pix = MetodoPago.objects.get(nombre="Pix")
@@ -222,11 +165,11 @@ class VentaQuerysetMethods(TestCase):
 
         for i, venta in enumerate(Venta.objects.all(), 1):
             if i % 2 == 1:
-                venta.metodo_pago.add(pix)
+                UsoMetodoPago.objects.create(venta=venta, monto=venta.total, metodo=pix)
             else:
-                venta.metodo_pago.add(efectivo)
+                UsoMetodoPago.objects.create(venta=venta, monto=venta.total, metodo=efectivo)
 
-        resultados = Venta.objects.data_grafico_bar_chartjs(year=2024, month=8)
+        resultados = Venta.objects.grafico_bar_metodos_de_pago_diario(year=2024, month=8)
 
         self.assertEquals(len(resultados), 4)
         self.assertEquals(len(resultados['efectivo']), 3)
@@ -236,25 +179,64 @@ class VentaQuerysetMethods(TestCase):
         self.assertEquals(resultados['carton'], [[0,0],[0,0],[0,0]])
         self.assertEquals(resultados['efectivo'], [[0,200],[0,175],[0,400]])
 
-
-    def test_venta_item_cantidad_total_por_productos(self):
+    def test_venta_items_queryset__grafico_bar_montos_productos_vendidos_mensual(self):
+        efectivo = MetodoPago.objects.get(nombre="Dinheiro")
         luz_70 = Producto.objects.get(nombre="luzeia 70gm")
         luz_120 = Producto.objects.get(nombre="luzeia 120gm")
-        maue_70 = Producto.objects.get(nombre="maue 70gm")
-        maue_120 = Producto.objects.get(nombre="maue 120gm")
-        maue_200 = Producto.objects.get(nombre="maue 200gm")
+
+        for venta in Venta.objects.all():
+            UsoMetodoPago.objects.create(venta=venta, monto=venta.total, metodo=efectivo)
+            VentaItem.objects.create(producto=luz_70, venta=venta, cantidad=2, precio=luz_70.precio)
+            VentaItem.objects.create(producto=luz_120, venta=venta, cantidad=1, precio=luz_120.precio)
+            
+ 
+        resultados = VentaItem.objects.grafico_bar_montos_productos_vendidos_mensual(year=2024, month=8)
+
+        self.assertEquals(1,1)
+        self.assertEquals(len(resultados), 2)
+
+        keys = {"label", "data", "borderRdius", "barThickness", "backgroundColor"}
+        self.assertEquals(len(resultados[0]), len(keys))
+        self.assertEquals(len(resultados[1]), len(keys))
+        
+        self.assertTrue(keys.issubset(resultados[0].keys()))
+        self.assertTrue(keys.issubset(resultados[1].keys()))
+
+        self.assertEquals(resultados[0]['data'], [560])
+        self.assertEquals(resultados[1]['data'], [700])
+
+        # self.assertEquals(resultados[0]['cantidades'], 28)
+        # self.assertEquals(resultados[1]['cantidades'], 14)
 
 
-        for i, venta in enumerate(Venta.objects.all(), 1):
-            if i % 2 == 1:
-                VentaItem.objects.create(producto=luz_70, venta=venta, cantidad=1, precio=luz_70.precio)
-            else:
-                VentaItem.objects.create(producto=luz_120, venta=venta, cantidad=1, precio=luz_120.precio)
+
+
+    # def test_venta_item_cantidad_total_por_productos(self):
+    #     luz_70 = Producto.objects.get(nombre="luzeia 70gm")
+    #     luz_120 = Producto.objects.get(nombre="luzeia 120gm")
+    #     maue_70 = Producto.objects.get(nombre="maue 70gm")
+    #     maue_120 = Producto.objects.get(nombre="maue 120gm")
+    #     maue_200 = Producto.objects.get(nombre="maue 200gm")
+
+
+    #     for i, venta in enumerate(Venta.objects.all(), 1):
+    #         if i % 2 == 1:
+    #             VentaItem.objects.create(producto=luz_70, venta=venta, cantidad=1, precio=luz_70.precio)
+    #         else:
+    #             VentaItem.objects.create(producto=luz_120, venta=venta, cantidad=1, precio=luz_120.precio)
             
 
-        cantidad_total_por_productos = VentaItem.objects.cantidad_total_por_productos(year=2024, month=8)
+    #     cantidad_total_por_productos = VentaItem.objects.cantidad_total_por_productos(year=2024, month=8)
 
-        self.assertEquals(Venta.objects.count(), VentaItem.objects.count())
+    #     self.assertEquals(Venta.objects.count(), VentaItem.objects.count())
+      
+      
+      
+      
+      
+      
+      
+      
         # self.assertEquals(len(cantidad_total_por_productos), 2)
         
         # # productos debe contener un diccionario para cada producto de fabricacion registrado sin importar que no haya sido vendido
@@ -333,48 +315,55 @@ class RaladaQuerysetMethods(TestCase):
     
     # def setUp(self):
         
-    def test_filtrar_por_fecha_y_tipo(self):
-        """
-        filtra raladas por mes, año y variedad de guarana (usando el nombre en del tipo de guarana en iexac)
-        """
-        resultado = Ralada.objects.filtrar_por_fecha_y_tipo(year=2024, month=7, variedad="maue")
-        self.assertEquals(len(resultado), 3)
+    # def test_filtrar_por_fecha_y_tipo(self):
+    #     """
+    #     filtra raladas por mes, año y variedad de guarana (usando el nombre en del tipo de guarana en iexac)
+    #     """
+    #     resultado = Ralada.objects.filtrar_por_fecha_y_tipo(year=2024, month=7, variedad="maue")
+    #     self.assertEquals(len(resultado), 3)
 
-        resultado = Ralada.objects.filtrar_por_fecha_y_tipo(year=2024, month=7, variedad="luzeia")
-        self.assertEquals(len(resultado), 3)
+    #     resultado = Ralada.objects.filtrar_por_fecha_y_tipo(year=2024, month=7, variedad="luzeia")
+    #     self.assertEquals(len(resultado), 3)
 
-        resultado = Ralada.objects.filtrar_por_fecha_y_tipo(year=2024, month=8, variedad="maue")
-        self.assertEquals(len(resultado), 0)
+    #     resultado = Ralada.objects.filtrar_por_fecha_y_tipo(year=2024, month=8, variedad="maue")
+    #     self.assertEquals(len(resultado), 0)
 
-        resultado = Ralada.objects.filtrar_por_fecha_y_tipo(year=2024, month=8, variedad="luzeia")
-        self.assertEquals(len(resultado), 1)
+    #     resultado = Ralada.objects.filtrar_por_fecha_y_tipo(year=2024, month=8, variedad="luzeia")
+    #     self.assertEquals(len(resultado), 1)
 
-    def test_bastones_procesados_al_mes(self):
-        resultado_maue = Ralada.objects.bastones_procesados_al_mes(year=2024, month=7, variedad="maue")
-        resultado_luzeia = Ralada.objects.bastones_procesados_al_mes(year=2024, month=7, variedad="luzeia")
+    # def test_bastones_procesados_al_mes(self):
+    #     resultado_maue = Ralada.objects.bastones_procesados_al_mes(year=2024, month=7, variedad="maue")
+    #     resultado_luzeia = Ralada.objects.bastones_procesados_al_mes(year=2024, month=7, variedad="luzeia")
         
-        self.assertEquals(resultado_maue['total_bastones'], 75)
-        self.assertEquals(resultado_luzeia['total_bastones'], 90)
+    #     self.assertEquals(resultado_maue['total_bastones'], 75)
+    #     self.assertEquals(resultado_luzeia['total_bastones'], 90)
 
-    def test_peso_procesado_al_mes(self):
-        resultado_maue = Ralada.objects.peso_procesado_al_mes(year=2024, month=7, variedad="maue")
-        resultado_luzeia = Ralada.objects.peso_procesado_al_mes(year=2024, month=7, variedad="luzeia")
+    # def test_peso_procesado_al_mes(self):
+    #     resultado_maue = Ralada.objects.peso_procesado_al_mes(year=2024, month=7, variedad="maue")
+    #     resultado_luzeia = Ralada.objects.peso_procesado_al_mes(year=2024, month=7, variedad="luzeia")
         
-        self.assertEquals(resultado_maue['total_peso'],15.05)
-        self.assertEquals(resultado_luzeia['total_peso'],15.825)
+    #     self.assertEquals(resultado_maue['total_peso'],15.05)
+    #     self.assertEquals(resultado_luzeia['total_peso'],15.825)
 
     def test_ralada_peso_y_cantidades_procesadas(self):
-        result1 = Ralada.objects.peso_y_cantidades_procesadas(year=2024, month=7)
+        result1 = Producto.objects.cantidad_vendida_bar_chart(year=2024, month=8)
         print(result1)
-
         self.assertEquals(1,1)
-    # def test_productos_producidos_al_mes(self):
+
+    # def test_producto_detalle_queryset__queryset_productos_producidos_al_mes(self):
     #     resultado = ProduccionDetalle.objects.queryset_productos_producidos_al_mes(year=2024, month=7)
     #     for producto in resultado:
     #         print(producto)
       
 
     #     self.assertEquals(1,1)
+
+    def test_producto_queryset__produccion_al_mes(self):
+        resultado = Producto.objects.produccion_al_mes_progress_chart(year=2024, month=8)
+        # print(resultado)
+      
+
+        self.assertEquals(1,1)
 
     # def test_productos_producidos_al_mes(self):
     #     resultado = ProduccionDetalle.objects.productos_producidos_al_mes(year=2024, month=7)

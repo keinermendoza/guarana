@@ -111,10 +111,13 @@ class InventarioAdmin(ModelAdmin):
 
         ventas = Venta.objects.all()
        
+        # data para graficos
+        ventas_diaria_metodos = Venta.objects.grafico_bar_metodos_de_pago_diario(year=year, month=month)
+        totales = Venta.objects.kpi_stats_totales_por_metodo(year=year, month=month)
+        # producto_vendido = Producto.objects.cantidad_vendida_bar_chart(year=year, month=month)
+        venta_mensual_productos = VentaItem.objects.grafico_bar_montos_productos_vendidos_mensual(year=year, month=month)
+        cantidad_total_por_productos = VentaItem.objects.progress_chart_cantidad_total_por_productos(year=year, month=month)
         
-        data_ventas = Venta.objects.data_grafico_bar_chartjs(year=year, month=month)
-        totales = Venta.objects.totales_mensuales(year=year, month=month)
-        cantidad_total_por_productos = VentaItem.objects.cantidad_total_por_productos(year=year, month=month)
         navegation = get_home_navegation(request)
         
         context = self.admin_site.each_context(request)
@@ -123,7 +126,7 @@ class InventarioAdmin(ModelAdmin):
                 "table_template": table_template,
                 "table_context":ventas,
                 "navigation": navegation,
-                "main_graphic_bar_title": "Vendas Diarias Segum Metodo de Pago",
+                "main_graphic_bar_title": "Monto de Ventas Diarias Segum Metodo de Pago",
                 "kpi": [
                     {
                         "title": "Vendas no Cartão",
@@ -147,31 +150,31 @@ class InventarioAdmin(ModelAdmin):
                         ),
                     },
                 ],
-                "progress_section_title":"Produtos Vendidos Neste Mes",
+                "progress_section_title":"Produtos Vendidos por Quantidades",
                 "progress": [
                     *cantidad_total_por_productos
                 ],
-                "chart": json.dumps(
+                "chart_diario": json.dumps(
                     {
-                        "labels": data_ventas['fechas'],
+                        "labels": ventas_diaria_metodos['fechas'],
                         "datasets": [
                             {
                                 "label": "Dinheiro",
-                                "data": data_ventas['efectivo'],
+                                "data": ventas_diaria_metodos['efectivo'],
                                 "borderRadius":5,
                                 "barThickness": 10,
                                 "backgroundColor": "#f0abfc",
                             },
                             {
                                 "label": "Cartão",
-                                "data": data_ventas['carton'],
+                                "data": ventas_diaria_metodos['carton'],
                                 "borderRadius":5,
                                 "barThickness": 10,
                                 "backgroundColor": "#9333ea",
                             },
                             {
                                 "label": "Pix",
-                                "data": data_ventas['pix'],
+                                "data": ventas_diaria_metodos['pix'],
                                 "borderRadius":5,
                                 "barThickness": 10,
                                 "backgroundColor": "#f43f5e",
@@ -179,6 +182,13 @@ class InventarioAdmin(ModelAdmin):
                         ],
                     }
                 ),
+                "chart_mensual_title": f"Monto Vendido por Produto no mes",
+                "chart_mensual": json.dumps(
+                    {
+                        "labels": [f"Mes {month}"],
+                        "datasets": venta_mensual_productos,
+                    }
+                )
                
             },
         )
@@ -192,55 +202,18 @@ class InventarioAdmin(ModelAdmin):
         """
         year = 2024
         month = 8
-        produccion = Ralada.objects.peso_y_cantidades_procesadas(year=year, month=7)
-
-        data_ventas = Venta.objects.data_grafico_bar_chartjs(year=year, month=month)
-        totales = Venta.objects.totales_mensuales(year=year, month=month)
-        cantidad_total_por_productos = VentaItem.objects.cantidad_total_por_productos(year=year, month=month)
+        produccion = Ralada.objects.peso_y_cantidades_procesadas_kpi(year=year, month=7)
+        produccion_mensual = Producto.objects.produccion_al_mes_progress_chart(year=year, month=7)
         navegation = get_home_navegation(request)
         
         context = self.admin_site.each_context(request)
         context.update(
             {
-                
                 "navigation": navegation,
                 "main_graphic_bar_title": "Vendas Diarias Segum Metodo de Pago",
-                "kpi": [
-                    *produccion
-                ],
-                "progress_section_title":"Produtos Vendidos Neste Mes",
-                "progress": [
-                    *cantidad_total_por_productos
-                ],
-                "chart": json.dumps(
-                    {
-                        "labels": data_ventas['fechas'],
-                        "datasets": [
-                            {
-                                "label": "Dinheiro",
-                                "data": data_ventas['efectivo'],
-                                "borderRadius":5,
-                                "barThickness": 10,
-                                "backgroundColor": "#f0abfc",
-                            },
-                            {
-                                "label": "Cartão",
-                                "data": data_ventas['carton'],
-                                "borderRadius":5,
-                                "barThickness": 10,
-                                "backgroundColor": "#9333ea",
-                            },
-                            {
-                                "label": "Pix",
-                                "data": data_ventas['pix'],
-                                "borderRadius":5,
-                                "barThickness": 10,
-                                "backgroundColor": "#f43f5e",
-                            },
-                        ],
-                    }
-                ),
-               
+                "kpi": produccion,
+                "progress_section_title":"Produtos Produzidos No Mes",
+                "progress": produccion_mensual,
             },
         )
 

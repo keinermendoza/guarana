@@ -2,7 +2,7 @@
 
 <div class="{% if card_included == 1 %}-m-6{% else %}lg:border lg:rounded-md lg:shadow-sm{% endif %} overflow-x-auto lg:dark:border-gray-800">
     <table class="block border-gray-200 border-spacing-none border-separate w-full lg:table"
-        x-data="{title:'', items:[], fecha:''}"
+        x-data="{title:'', items:[], fecha:'', metodos: []}"
     >
         
             <thead class="text-gray-900 dark:text-gray-100">
@@ -27,7 +27,15 @@
                                     },
                                 {% endfor %}
                                 ],
-                            
+                            metodosPago: [
+                                {% for uso_metodo in venta.usos_metodo_pago.all %}
+                                    {
+                                        'nombre': {{uso_metodo.metodo.nombre}},
+                                        'monto': {{uso_metodo.monto}},
+                                        'declarado': {{uso_metodo.declarado}}
+                                    },
+                                {% endfor %}
+                                ],
                             }"
                     class="{% if striped == 1 %}{% cycle '' 'bg-gray-50 dark:bg-white/[.02]' %}{% endif %} block {% if not card_included == 1 %}border mb-3 rounded-md shadow-sm{% else %}border-t{% endif %} lg:table-row lg:border-none lg:mb-0 lg:shadow-none dark:border-gray-800">
                             <td class="px-3 py-2 align-middle flex border-t border-gray-200 font-normal gap-4 min-w-0 overflow-hidden text-left before:flex before:capitalize before:content-[attr(data-label)] before:items-center before:mr-auto first:border-t-0 lg:before:hidden lg:first:border-t lg:py-3 lg:table-cell dark:border-gray-800 {% if card_included == 1 %}lg:first:pl-6 lg:last:pr-6{% endif %}" 
@@ -38,7 +46,7 @@
                             data-label="Detalhes"
                             >
                                 <div class="ml-auto w-fit" x-data="{modalIsOpen: false}">
-                                    <button @click="modalIsOpen = true; title='{{venta.total}}'; fecha='{{venta.fecha_corta}}',items=ventaItems"
+                                    <button @click="modalIsOpen = true; title='{{venta.total}}'; fecha='{{venta.fecha_corta}}',items=ventaItems, metodos=metodosPago"
                      
                                     
                                     type="button" class="text-gray-800 cursor-pointer whitespace-nowrap rounded text-center text-sm font-medium tracking-wide transition hover:opacity-75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700 active:opacity-100 active:outline-offset-0 dark:bg-sky-600 dark:text-white dark:focus-visible:outline-sky-600">
@@ -91,6 +99,13 @@
 
                                                 <div>
                                                     <p>Nessa venda recebemos as seguentes formas de pagamento</p>
+                                                    <template x-for="metodo in metodos">
+                                                        <div class="flex justify-between gap-1 rounded p-2 bg-gray-200">
+                                                            <p x-text="metodo.nombre"></p>
+                                                            <p x-text="metodo.declarado"></p>
+                                                            <p x-text="metodo.monto"></p>
+                                                        </div>
+                                                    </template>
 
                                                 </div>
 

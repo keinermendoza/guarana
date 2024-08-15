@@ -22,7 +22,7 @@
 {% endcomponent %}
 
 {% component "unfold/components/card.html" with class="mb-8" title=main_graphic_bar_title %}
-    {% component "unfold/components/chart/bar.html" with data=chart height=320 %}{% endcomponent %}
+    {% component "unfold/components/chart/bar.html" with data=chart_diario height=320 %}{% endcomponent %}
 {% endcomponent %}
 
 {% component "unfold/components/flex.html" with class="gap-8 mb-8 flex-col lg:flex-row" %}
@@ -34,22 +34,15 @@
         {% endcomponent %}
     {% endcomponent %}    
 
-    {% comment %} {% component "unfold/components/flex.html" with class="gap-8 lg:w-1/2" col=1 %}
-        {% for stats in performance %}
-            {% component "unfold/components/card.html" %}
-                {% component "unfold/components/text.html" %}
-                    {{ stats.title }}
-                {% endcomponent %}   
-
-                {% component "unfold/components/title.html" with class="mb-8" %}
-                    {{ stats.metric }}
-                {% endcomponent %}                                  
-
-                {% component "unfold/components/chart/line.html" with data=stats.chart %}{% endcomponent %}
+    {% component "unfold/components/flex.html" with class="gap-8 lg:w-1/2" col=1 %}
+                
+            {% component "unfold/components/card.html" with class="mb-8" title=chart_mensual_title %}
+                {% component "unfold/components/chart/bar.html" with data=chart_mensual  height=320 %}{% endcomponent %}
             {% endcomponent %}
-        {% endfor %}
-    {% endcomponent %}         {% endcomment %}
+
+    {% endcomponent %}
+
 {% endcomponent %}    
 {% endcomponent %}
 
-{% include table_template with table_context=table_context %}
+{% comment %} {% include table_template with table_context=table_context %} {% endcomment %}

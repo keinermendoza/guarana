@@ -5,8 +5,9 @@ from django.utils import timezone as tz
 from .querysets import (
     VentaQueryset,
     RaladaQueryset,
-    ProduccionDetalleQueryset,
-    VentaItemQueryset
+    # ProduccionDetalleQueryset,
+    VentaItemQueryset,
+    ProductoQueryset
 )
 
 class TipoGuarana(models.Model):
@@ -45,7 +46,7 @@ class MetodoPago(models.Model):
         verbose_name_plural = "Metodos de Pago"
 
 class UsoMetodoPago(models.Model):
-    monto = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    monto = models.DecimalField(max_digits=10, decimal_places=2, blank=True)
     metodo = models.ForeignKey(MetodoPago, related_name="usos_metodo_pago", on_delete=models.CASCADE)
     venta = models.ForeignKey("Venta", related_name="usos_metodo_pago", on_delete=models.CASCADE)
     declarado = models.BooleanField(default=False)
@@ -58,13 +59,15 @@ class Producto(models.Model):
     descripcion = models.TextField(blank=True, null=True)
     precio = models.DecimalField(max_digits=10, decimal_places=2, blank=True)
     es_fabricado = models.BooleanField(default=False)
+
+    objects = ProductoQueryset.as_manager()
     
     def __str__(self) -> str:
         return self.nombre
 
 # error metodo_pago must to reference UsoMetodoPago as ForeingKey instead MetodoPago as ManyToMany
 class Venta(models.Model):
-    metodo_pago = models.ManyToManyField(MetodoPago, related_name="ventas")
+    # metodo_pago = models.ForeignKey(UsoMetodoPago, related_name="ventas", )
     nota = models.TextField(blank=True, null=True)
     total = models.DecimalField(max_digits=10, decimal_places=2)
     fecha_venta = models.DateField(default=tz.now)
@@ -179,7 +182,7 @@ class ProduccionDetalle(models.Model):
     cantidad = models.PositiveIntegerField()
     fecha_registro = models.DateTimeField(auto_now=True)
 
-    objects = ProduccionDetalleQueryset.as_manager()
+    # objects = ProduccionDetalleQueryset.as_manager()
 
 
     def __str__(self) -> str:

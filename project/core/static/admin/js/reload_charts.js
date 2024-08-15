@@ -36,10 +36,10 @@ function renderChartFromData() {
                     legend: {
                         position: 'top',
                     },
-                    title: {
-                        display: true,
-                        text: 'Ventas Diarias por Método de Pago'
-                    },
+                    // title: {
+                    //     display: true,
+                    //     text: 'Ventas Diarias por Método de Pago'
+                    // },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
