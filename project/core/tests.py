@@ -205,49 +205,22 @@ class VentaQuerysetMethods(TestCase):
         self.assertEquals(resultados[0]['data'], [560])
         self.assertEquals(resultados[1]['data'], [700])
 
-        # self.assertEquals(resultados[0]['cantidades'], 28)
-        # self.assertEquals(resultados[1]['cantidades'], 14)
 
 
+    def test_cantidad_vendida_bar_chart(self):
+        luz_70 = Producto.objects.get(nombre="luzeia 70gm")
+        luz_120 = Producto.objects.get(nombre="luzeia 120gm")
+        efectivo = MetodoPago.objects.get(nombre="Dinheiro")
 
-
-    # def test_venta_item_cantidad_total_por_productos(self):
-    #     luz_70 = Producto.objects.get(nombre="luzeia 70gm")
-    #     luz_120 = Producto.objects.get(nombre="luzeia 120gm")
-    #     maue_70 = Producto.objects.get(nombre="maue 70gm")
-    #     maue_120 = Producto.objects.get(nombre="maue 120gm")
-    #     maue_200 = Producto.objects.get(nombre="maue 200gm")
-
-
-    #     for i, venta in enumerate(Venta.objects.all(), 1):
-    #         if i % 2 == 1:
-    #             VentaItem.objects.create(producto=luz_70, venta=venta, cantidad=1, precio=luz_70.precio)
-    #         else:
-    #             VentaItem.objects.create(producto=luz_120, venta=venta, cantidad=1, precio=luz_120.precio)
+        for venta in Venta.objects.all():
+            UsoMetodoPago.objects.create(venta=venta, monto=venta.total, metodo=efectivo)
+            VentaItem.objects.create(producto=luz_70, venta=venta, cantidad=2, precio=luz_70.precio)
+            VentaItem.objects.create(producto=luz_120, venta=venta, cantidad=1, precio=luz_120.precio)
             
 
-    #     cantidad_total_por_productos = VentaItem.objects.cantidad_total_por_productos(year=2024, month=8)
-
-    #     self.assertEquals(Venta.objects.count(), VentaItem.objects.count())
-      
-      
-      
-      
-      
-      
-      
-      
-        # self.assertEquals(len(cantidad_total_por_productos), 2)
-        
-        # # productos debe contener un diccionario para cada producto de fabricacion registrado sin importar que no haya sido vendido
-        # self.assertEquals(len(cantidad_total_por_productos['productos']), 5)
-
-        # # el maximo debe ser 1 numero mayor a la mayor cantidad de productos vendidos (en este caso 7)
-        # self.assertEquals(cantidad_total_por_productos['maximo'], 8)
-
-        # # todos los elementos del dict productos contienen las claves 'nombre' y 'total'
-        # self.assertTrue("nombre" in cantidad_total_por_productos['productos'][random.randint(0,4)].keys())
-        # self.assertTrue("total" in cantidad_total_por_productos['productos'][random.randint(0,4)].keys())
+        result1 = Producto.objects.cantidad_vendida_bar_chart(year=2024, month=8)
+        print(result1)
+        self.assertEquals(1,1)
 
 
 class RaladaQuerysetMethods(TestCase):
@@ -311,53 +284,6 @@ class RaladaQuerysetMethods(TestCase):
         
         Ralada.objects.create(produccion=p7, saco=saco_303, cantidad_bastones=30, peso_inicial=5400, peso_final=5250 ,fecha_ralada='2024-08-05')
 
-        
-    
-    # def setUp(self):
-        
-    # def test_filtrar_por_fecha_y_tipo(self):
-    #     """
-    #     filtra raladas por mes, año y variedad de guarana (usando el nombre en del tipo de guarana en iexac)
-    #     """
-    #     resultado = Ralada.objects.filtrar_por_fecha_y_tipo(year=2024, month=7, variedad="maue")
-    #     self.assertEquals(len(resultado), 3)
-
-    #     resultado = Ralada.objects.filtrar_por_fecha_y_tipo(year=2024, month=7, variedad="luzeia")
-    #     self.assertEquals(len(resultado), 3)
-
-    #     resultado = Ralada.objects.filtrar_por_fecha_y_tipo(year=2024, month=8, variedad="maue")
-    #     self.assertEquals(len(resultado), 0)
-
-    #     resultado = Ralada.objects.filtrar_por_fecha_y_tipo(year=2024, month=8, variedad="luzeia")
-    #     self.assertEquals(len(resultado), 1)
-
-    # def test_bastones_procesados_al_mes(self):
-    #     resultado_maue = Ralada.objects.bastones_procesados_al_mes(year=2024, month=7, variedad="maue")
-    #     resultado_luzeia = Ralada.objects.bastones_procesados_al_mes(year=2024, month=7, variedad="luzeia")
-        
-    #     self.assertEquals(resultado_maue['total_bastones'], 75)
-    #     self.assertEquals(resultado_luzeia['total_bastones'], 90)
-
-    # def test_peso_procesado_al_mes(self):
-    #     resultado_maue = Ralada.objects.peso_procesado_al_mes(year=2024, month=7, variedad="maue")
-    #     resultado_luzeia = Ralada.objects.peso_procesado_al_mes(year=2024, month=7, variedad="luzeia")
-        
-    #     self.assertEquals(resultado_maue['total_peso'],15.05)
-    #     self.assertEquals(resultado_luzeia['total_peso'],15.825)
-
-    def test_ralada_peso_y_cantidades_procesadas(self):
-        result1 = Producto.objects.cantidad_vendida_bar_chart(year=2024, month=8)
-        print(result1)
-        self.assertEquals(1,1)
-
-    # def test_producto_detalle_queryset__queryset_productos_producidos_al_mes(self):
-    #     resultado = ProduccionDetalle.objects.queryset_productos_producidos_al_mes(year=2024, month=7)
-    #     for producto in resultado:
-    #         print(producto)
-      
-
-    #     self.assertEquals(1,1)
-
     def test_producto_queryset__produccion_al_mes(self):
         resultado = Producto.objects.produccion_al_mes_progress_chart(year=2024, month=8)
         # print(resultado)
@@ -365,11 +291,4 @@ class RaladaQuerysetMethods(TestCase):
 
         self.assertEquals(1,1)
 
-    # def test_productos_producidos_al_mes(self):
-    #     resultado = ProduccionDetalle.objects.productos_producidos_al_mes(year=2024, month=7)
-    #     # for producto in resultado:
-    #     #     print(producto)
-    #     print(resultado)
-
-    #     self.assertEquals(1,1)
 

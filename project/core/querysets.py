@@ -4,7 +4,6 @@ from decimal import Decimal
 from django.db import models
 from django.db.models.functions import Cast, Coalesce
 from django.utils.safestring import mark_safe
-
 from django.utils import timezone as tz
 
 # referencia MetodoPago.Tipos en models
@@ -14,6 +13,8 @@ METODO_PAGO_CARTON = "C"
 
 
 class VentaQueryset(models.QuerySet):
+
+    # TODO: DELETE
     def cobros_en_ventas_segun_metodo_de_pago(
         self, 
         year: int,
@@ -76,6 +77,7 @@ class VentaQueryset(models.QuerySet):
 
         return ventas
     
+    # TODO: CREATE DEDICATE METHOD
     def kpi_stats_totales_por_metodo(
         self,
         year: int = tz.now().year,
@@ -92,13 +94,13 @@ class VentaQueryset(models.QuerySet):
         efectivo = sum(totales["efectivo"])
         pix = sum(totales["pix"])
 
-        
         return {
             'carton': carton,
             'efectivo':efectivo,
             'pix': pix
         }
     
+    # TODO: CREATE DEDICATE METHOD
     def grafico_bar_metodos_de_pago_diario(
         self,
         year: int = tz.now().year,
@@ -124,53 +126,6 @@ class VentaQueryset(models.QuerySet):
     
 
 class VentaItemQueryset(models.QuerySet):
-    def progress_chart_cantidad_total_por_productos(
-        self, 
-        year: int =tz.now().year,
-        month: int =tz.now().month,
-    ):
-        queryset = self.filter(
-            venta__fecha_venta__year=year,
-            venta__fecha_venta__month=month,
-        ).values(
-            'producto__nombre',
-        ).annotate(cantidad_vendida=models.Sum('cantidad'))\
-        .order_by('-cantidad_vendida')
-  
-        from .models import Producto
-        cantidad_maxima = queryset[0]["cantidad_vendida"] + 1
-
-        productos = []
-        productos_no_vendidos = list(Producto.objects.values_list('nombre', flat=True))
-
-        for item in queryset:
-            title = item["producto__nombre"]
-            cantidad = item["cantidad_vendida"]
-            value = int(cantidad / cantidad_maxima * 100) 
-
-            productos.append({
-                "title":title.capitalize(),
-                "value":value,
-                "description": f"{cantidad} Unidades"
-            })
-
-            try:
-                index = productos_no_vendidos.index(title)
-                productos_no_vendidos.pop(index)
-            except:
-                pass
-
-        for item in productos_no_vendidos:
-            productos.append({
-                "title":item.capitalize(),
-                "value":0,
-                "description":'0 Unidades'
-            })
-        
-        productos = sorted(productos, key=lambda x: x['title'])
-        return productos
-        
-
     def grafico_bar_montos_productos_vendidos_mensual(
         self,
         year: int = tz.now().year,
@@ -182,14 +137,16 @@ class VentaItemQueryset(models.QuerySet):
         GRAFICO DE BARRAS en chartjs
         """
 
-        queryset = self.filter(venta__fecha_venta__year=year, venta__fecha_venta__month=month)\
-            .annotate(
-                nombre=models.F('producto__nombre'),
-                monto=models.ExpressionWrapper(
-                    models.F('precio') * models.F('cantidad'),
-                    output_field=models.FloatField()
-                )
-            ).values('nombre')\
+        queryset = self.filter(
+            venta__fecha_venta__year=year,
+            venta__fecha_venta__month=month
+        ).annotate(
+            nombre=models.F('producto__nombre'),
+            monto=models.ExpressionWrapper(
+                models.F('precio') * models.F('cantidad'),
+                output_field=models.FloatField()
+            )
+        ).values('nombre')\
             .annotate(
                 totales=models.Sum('monto')
             ).order_by('producto', 'totales')
@@ -250,44 +207,45 @@ class ProductoQueryset(models.QuerySet):
                 "description":f"{item['total_producido']} produtos produzidos",
                 "value":value
             })
-        return productos
+        return sorted(productos, key=lambda x: x['title'])
 
-    def cantidad_vendida_bar_chart(
+
+    def cantidad_vendida_progress_chart(
         self,
         year: int =tz.now().year,
         month: int =tz.now().month,   
     ):
-        return self.values(
+        """
+        cantidades vendidas al mes por producto
+        formato de data para PROGRESS CHART
+        """
+        queryset = self.values(
             'nombre',
         ).annotate(
-            fecha=models.F('detalles__venta__fecha_venta'),
-            ventas=Coalesce(
+            cantidad_vendida=Coalesce(
                 models.Sum(
-                    'detalles__cantidad', 
+                    'venta_items__cantidad', 
                     filter=models.Q(
-                        detalles__venta__fecha_venta__year=year, 
-                        detalles__venta__fecha_venta__month=month
+                        venta_items__venta__fecha_venta__year=year, 
+                        venta_items__venta__fecha_venta__month=month
                     )
                 ),
                 models.Value(0)
-            )
-        ).order_by('-ventas', 'nombre')
+            ),
+        ).order_by('-cantidad_vendida', 'nombre')
 
-        cantidad_maxima = queryset[0]["ventas"] + 1
-
+        cantidad_maxima = queryset[0]["cantidad_vendida"] + 1
         productos = []
         for item in queryset:
-            title = item["nombre"]
-            cantidad = item["ventas"]
-            value = int(cantidad / cantidad_maxima * 100) 
-
+            value = int(item["cantidad_vendida"] / cantidad_maxima * 100) 
+            
             productos.append({
-                "title":title.capitalize(),
-                "value":value,
-                "description": f"{cantidad} Unidades"
+                "title": item['nombre'].capitalize(),
+                "description":f"{item['cantidad_vendida']} produtos vendidos",
+                "value":value
             })
-        return productos
-    
+        return sorted(productos, key=lambda x: x['title'])
+
 class RaladaQueryset(models.QuerySet):
     def peso_y_cantidades_procesadas_kpi(
         self, 

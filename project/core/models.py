@@ -5,7 +5,6 @@ from django.utils import timezone as tz
 from .querysets import (
     VentaQueryset,
     RaladaQueryset,
-    # ProduccionDetalleQueryset,
     VentaItemQueryset,
     ProductoQueryset
 )
@@ -65,9 +64,7 @@ class Producto(models.Model):
     def __str__(self) -> str:
         return self.nombre
 
-# error metodo_pago must to reference UsoMetodoPago as ForeingKey instead MetodoPago as ManyToMany
 class Venta(models.Model):
-    # metodo_pago = models.ForeignKey(UsoMetodoPago, related_name="ventas", )
     nota = models.TextField(blank=True, null=True)
     total = models.DecimalField(max_digits=10, decimal_places=2)
     fecha_venta = models.DateField(default=tz.now)
@@ -92,11 +89,12 @@ class Venta(models.Model):
 
 class VentaItem(models.Model):
     venta = models.ForeignKey(Venta, related_name='items', on_delete=models.CASCADE)
-    producto = models.ForeignKey(Producto, related_name='detalles', on_delete=models.CASCADE)
+    producto = models.ForeignKey(Producto, related_name='venta_items', on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
     precio = models.DecimalField(max_digits=10, decimal_places=2, blank=True)
     fecha_registro = models.DateTimeField(auto_now=True)
     objects = VentaItemQueryset.as_manager()
+    
     def __str__(self) -> str:
         return f'{self.cantidad} x {self.producto}'
     
@@ -181,9 +179,6 @@ class ProduccionDetalle(models.Model):
     producto = models.ForeignKey(Producto, related_name="producciones", on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
     fecha_registro = models.DateTimeField(auto_now=True)
-
-    # objects = ProduccionDetalleQueryset.as_manager()
-
 
     def __str__(self) -> str:
         return f'{self.cantidad} x {self.producto}'

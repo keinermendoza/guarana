@@ -21,11 +21,15 @@
     {% endfor %}
 {% endcomponent %}
 
+{% if chart_diario %}
 {% component "unfold/components/card.html" with class="mb-8" title=main_graphic_bar_title %}
     {% component "unfold/components/chart/bar.html" with data=chart_diario height=320 %}{% endcomponent %}
 {% endcomponent %}
+{% endif %}
+
 
 {% component "unfold/components/flex.html" with class="gap-8 mb-8 flex-col lg:flex-row" %}
+    {% if progress %}
     {% component "unfold/components/card.html" with class="lg:w-1/2" title=progress_section_title %}
         {% component "unfold/components/flex.html" with col=1 class="gap-8" %}
             {% for metric in progress %}
@@ -33,14 +37,15 @@
             {% endfor %}
         {% endcomponent %}
     {% endcomponent %}    
+    {% endif %}
 
+    {% if chart_mensual %}
     {% component "unfold/components/flex.html" with class="gap-8 lg:w-1/2" col=1 %}
-                
             {% component "unfold/components/card.html" with class="mb-8" title=chart_mensual_title %}
                 {% component "unfold/components/chart/bar.html" with data=chart_mensual  height=320 %}{% endcomponent %}
             {% endcomponent %}
-
     {% endcomponent %}
+    {% endif %}
 
 {% endcomponent %}    
 {% endcomponent %}

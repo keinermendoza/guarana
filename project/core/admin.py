@@ -114,9 +114,8 @@ class InventarioAdmin(ModelAdmin):
         # data para graficos
         ventas_diaria_metodos = Venta.objects.grafico_bar_metodos_de_pago_diario(year=year, month=month)
         totales = Venta.objects.kpi_stats_totales_por_metodo(year=year, month=month)
-        # producto_vendido = Producto.objects.cantidad_vendida_bar_chart(year=year, month=month)
+        producto_vendido = Producto.objects.cantidad_vendida_progress_chart(year=year, month=month)
         venta_mensual_productos = VentaItem.objects.grafico_bar_montos_productos_vendidos_mensual(year=year, month=month)
-        cantidad_total_por_productos = VentaItem.objects.progress_chart_cantidad_total_por_productos(year=year, month=month)
         
         navegation = get_home_navegation(request)
         
@@ -151,9 +150,8 @@ class InventarioAdmin(ModelAdmin):
                     },
                 ],
                 "progress_section_title":"Produtos Vendidos por Quantidades",
-                "progress": [
-                    *cantidad_total_por_productos
-                ],
+                "progress": producto_vendido,
+                
                 "chart_diario": json.dumps(
                     {
                         "labels": ventas_diaria_metodos['fechas'],
