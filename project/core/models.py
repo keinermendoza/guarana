@@ -1,6 +1,7 @@
 
 from django.db import models
 from django.utils import timezone as tz
+from django.utils.safestring import mark_safe
 
 from .querysets import (
     VentaQueryset,
@@ -53,6 +54,10 @@ class UsoMetodoPago(models.Model):
     def __str__(self) -> str:
         return f"Metodo {self.metodo} {self.venta}"
 
+    @property
+    def es_declarado(self):
+        return 'true' if self.declarado else 'false'
+    
 class Producto(models.Model):
     nombre = models.CharField(max_length=200)
     descripcion = models.TextField(blank=True, null=True)
@@ -81,11 +86,11 @@ class Venta(models.Model):
         return self.fecha_venta.strftime("%d/%m/%Y")
     
     def __str__(self) -> str:
-        return f"{self.fecha_corta}  {self.total}"
+        return f"{self.fecha_corta} R$ {self.total}"
     
     @property
     def title(self):
-        return f"Venta dia {self.__str__()}"
+        return mark_safe(f"Venda por R&#36; {self.total}")
 
 class VentaItem(models.Model):
     venta = models.ForeignKey(Venta, related_name='items', on_delete=models.CASCADE)

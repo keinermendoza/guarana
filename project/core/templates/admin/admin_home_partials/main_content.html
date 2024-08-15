@@ -47,7 +47,8 @@
     {% endcomponent %}
     {% endif %}
 
-{% endcomponent %}    
 {% endcomponent %}
-
-{% comment %} {% include table_template with table_context=table_context %} {% endcomment %}
+{% if table_template %}
+    {% include table_template with table_context=table_context %}
+{% endif %}    
+{% endcomponent %}

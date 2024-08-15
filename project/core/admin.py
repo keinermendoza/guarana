@@ -10,6 +10,7 @@ from unfold.contrib.inlines.admin import NonrelatedTabularInline
 from django.utils import timezone
 from django.utils.formats import date_format
 from django_htmx.http import trigger_client_event
+from django.utils import timezone as tz
 
 
 from django.utils.safestring import mark_safe
@@ -95,19 +96,18 @@ class InventarioAdmin(ModelAdmin):
         my_urls = [
             path("vendas/", self.admin_site.admin_view(self.vendas), name='vendas'),
             path("producao/", self.admin_site.admin_view(self.producao), name='producao'),
-            path("mensal/", self.admin_site.admin_view(self.resumen_mensual), name='resumen_mensual'),
-
         ]
         return my_urls + urls
     
 
     def vendas(self, request, *args, **kwargs):
         """
-        custom view for show daily amounts
+        custom view for shows sales with charts
+        and also sales table
         """
         table_template = "admin/components/table_ventas.html"
-        year = 2024
-        month = 8
+        year = tz.now().year
+        month = tz.now().month
 
         ventas = Venta.objects.all()
        
@@ -196,18 +196,24 @@ class InventarioAdmin(ModelAdmin):
     
     def producao(self, request, *args, **kwargs):
         """
-        custom view for show daily amounts
+        custom view shows production related info
+        and also custom production table  
         """
-        year = 2024
-        month = 8
-        produccion = Ralada.objects.peso_y_cantidades_procesadas_kpi(year=year, month=7)
-        produccion_mensual = Producto.objects.produccion_al_mes_progress_chart(year=year, month=7)
+        table_template = "admin/components/table_produccion.html"
+
+        year = tz.now().year
+        month = tz.now().month
+
+        produccion = Ralada.objects.peso_y_cantidades_procesadas_kpi(year=year, month=month)
+        produccion_mensual = Producto.objects.produccion_al_mes_progress_chart(year=year, month=month)
         navegation = get_home_navegation(request)
         
         context = self.admin_site.each_context(request)
         context.update(
             {
                 "navigation": navegation,
+                "table_template": table_template,
+                "table_context":[],
                 "main_graphic_bar_title": "Vendas Diarias Segum Metodo de Pago",
                 "kpi": produccion,
                 "progress_section_title":"Produtos Produzidos No Mes",
@@ -217,19 +223,10 @@ class InventarioAdmin(ModelAdmin):
 
         resp = render(request, self.custom_template, context)
         return trigger_client_event(resp, "reload_charts", after="swap")
-    
-    def resumen_mensual(self, request, *args, **kwargs):
-        """
-        custom view for show daily amounts
-        """
-        context = self.admin_site.each_context(request)
-        resp = render(request, self.custom_template, context)
-        return trigger_client_event(resp, "reload_charts", after="swap")
+
 @admin.register(AnotacionInventario)
 class AnotacionInventarioAdmin(ModelAdmin):
    pass
-
-
 
 @admin.register(TipoGuarana)
 class TipoGuaranaAdmin(ModelAdmin):

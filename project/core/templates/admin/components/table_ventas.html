@@ -1,8 +1,74 @@
 {% load unfold %}
 
-<div class="{% if card_included == 1 %}-m-6{% else %}lg:border lg:rounded-md lg:shadow-sm{% endif %} overflow-x-auto lg:dark:border-gray-800">
+<div 
+    x-data="{title:'', total:'', items:[], fecha:'', metodos: [], modalIsOpen:false}"
+    class="{% if card_included == 1 %}-m-6{% else %}lg:border lg:rounded-md lg:shadow-sm{% endif %} overflow-x-auto lg:dark:border-gray-800">
+   
+    <div x-cloak x-show="modalIsOpen" x-transition.opacity.duration.200ms x-trap.inert.noscroll="modalIsOpen" @keydown.esc.window="modalIsOpen = false" @click.self="modalIsOpen = false" class="fixed inset-0 z-30 flex items-end justify-center bg-black/20 p-4 pb-8 backdrop-blur-md sm:items-center lg:p-8" role="dialog" aria-modal="true" aria-labelledby="defaultModalTitle">
+        <!-- Modal Dialog -->
+        <div x-show="modalIsOpen" x-transition:enter="transition ease-out duration-200 delay-100 motion-reduce:transition-opacity" x-transition:enter-start="opacity-0 scale-50" x-transition:enter-end="opacity-100 scale-100" 
+        class="flex max-w-lg flex-col gap-4 overflow-hidden rounded border border-zinc-300 bg-zinc-50 text-neutral-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+            <!-- Dialog Header -->
+            <div class="flex items-center justify-between border-b border-zinc-300 bg-zinc-100/60 p-4 dark:border-zinc-700 dark:bg-zinc-900/20">
+                <h3 id="defaultModalTitle" class="font-semibold tracking-wide text-center text-neutral-900 dark:text-zinc-50" >
+                    <span x-text="title"></span>
+                </h3>
+                <button @click="modalIsOpen = false" aria-label="close modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" stroke="currentColor" fill="none" stroke-width="1.4" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <!-- Dialog Body -->
+            <div class="p-4 flex flex-col gap-4">
+                <p>Venda Realizada no dia <span class="font-semibold" x-text="fecha"></span></p> 
+                <div>
+                    <p class="mb-2">
+                        A continução se presentan os produtos incluidos nesta venda 
+                    </p>
+                    <div class="p-2 bg-gray-200 rounded">
+                        <div class="mt-2 flex font-semibold justify-between gap-1 rounded p-2 bg-gray-200">
+                            <p>Nome</p>
+                            <p>Qtd</p>
+                            <p>Valor</p>
+                            <p>Total</p>
+                        </div>
+                        <template x-for="item in items">
+                            <div class="flex justify-between gap-1 rounded p-2 bg-gray-200">
+                                <span x-text="item.cantidad"></span>
+                                <span x-text="item.nombre"></span>
+                                <span x-text="item.precio"></span>
+                                <span x-text="item.total"></span>
+                            </div>
+                        </template>
+                        <div class="flex font-semibold justify-between gap-1 p-2 ">
+                            <span>Total</span>
+                            <span x-text="total"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="mb-2">Nessa venda recebemos as seguentes formas de pagamento</p>
+                   
+                    <template x-for="metodo in metodos">
+                        <div class="flex justify-between gap-1 rounded p-2 bg-gray-200">
+                            <p x-text="metodo.nombre"></p>
+                            <p x-text="metodo.declarado"></p>
+                            <p x-text="metodo.monto"></p>
+                        </div>
+                    </template>
+
+                </div>
+
+                
+            </div>
+            
+        </div>
+    </div>
+   
     <table class="block border-gray-200 border-spacing-none border-separate w-full lg:table"
-        x-data="{title:'', items:[], fecha:'', metodos: []}"
+        
     >
         
             <thead class="text-gray-900 dark:text-gray-100">
@@ -30,9 +96,9 @@
                             metodosPago: [
                                 {% for uso_metodo in venta.usos_metodo_pago.all %}
                                     {
-                                        'nombre': {{uso_metodo.metodo.nombre}},
-                                        'monto': {{uso_metodo.monto}},
-                                        'declarado': {{uso_metodo.declarado}}
+                                        'nombre': '{{uso_metodo.metodo.nombre}}',
+                                        'monto': '{{uso_metodo.monto}}',
+                                        'declarado': '{{uso_metodo.metodo.declarado}}'
                                     },
                                 {% endfor %}
                                 ],
@@ -45,8 +111,8 @@
                             <td class="px-3 py-2 align-middle flex border-t border-gray-200 font-normal gap-4 min-w-0 overflow-hidden text-left before:flex before:capitalize before:content-[attr(data-label)] before:items-center before:mr-auto first:border-t-0 lg:before:hidden lg:first:border-t lg:py-3 lg:table-cell dark:border-gray-800 {% if card_included == 1 %}lg:first:pl-6 lg:last:pr-6{% endif %}" 
                             data-label="Detalhes"
                             >
-                                <div class="ml-auto w-fit" x-data="{modalIsOpen: false}">
-                                    <button @click="modalIsOpen = true; title='{{venta.total}}'; fecha='{{venta.fecha_corta}}',items=ventaItems, metodos=metodosPago"
+                                <div class="ml-auto w-fit" >
+                                    <button @click="modalIsOpen = true; title='{{venta.title}}', total='{{venta.total}}', fecha='{{venta.fecha_corta}}', items=ventaItems, metodos=metodosPago"
                      
                                     
                                     type="button" class="text-gray-800 cursor-pointer whitespace-nowrap rounded text-center text-sm font-medium tracking-wide transition hover:opacity-75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700 active:opacity-100 active:outline-offset-0 dark:bg-sky-600 dark:text-white dark:focus-visible:outline-sky-600">
@@ -54,70 +120,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
                                           </svg>
                                     </button>
-                                    <div x-cloak x-show="modalIsOpen" x-transition.opacity.duration.200ms x-trap.inert.noscroll="modalIsOpen" @keydown.esc.window="modalIsOpen = false" @click.self="modalIsOpen = false" class="fixed inset-0 z-30 flex items-end justify-center bg-black/20 p-4 pb-8 backdrop-blur-md sm:items-center lg:p-8" role="dialog" aria-modal="true" aria-labelledby="defaultModalTitle">
-                                        <!-- Modal Dialog -->
-                                        <div x-show="modalIsOpen" x-transition:enter="transition ease-out duration-200 delay-100 motion-reduce:transition-opacity" x-transition:enter-start="opacity-0 scale-50" x-transition:enter-end="opacity-100 scale-100" class="flex max-w-lg flex-col gap-4 overflow-hidden rounded border border-zinc-300 bg-zinc-50 text-neutral-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-                                            <!-- Dialog Header -->
-                                            <div class="flex items-center justify-between border-b border-zinc-300 bg-zinc-100/60 p-4 dark:border-zinc-700 dark:bg-zinc-900/20">
-                                                <h3 id="defaultModalTitle" class="font-semibold tracking-wide text-center text-neutral-900 dark:text-zinc-50" >
-                                                    <span>Venda por R$ </span><span x-text="title"></span>
-                                                </h3>
-                                                <button @click="modalIsOpen = false" aria-label="close modal">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" stroke="currentColor" fill="none" stroke-width="1.4" class="w-5 h-5">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                            <!-- Dialog Body -->
-                                            <div class="p-4">
-                                                <p>Venda Realizada no dia <span class="font-semibold" x-text="fecha"></span></p> 
-                                                
-
-                                                <div>
-                                                    <p>
-                                                        A continução se presentan os produtos incluidos nesta venda 
-                                                    </p>
-                                                    <div class="mt-2 flex font-semibold justify-between gap-1 rounded p-2 bg-gray-200">
-                                                        <p>Nome</p>
-                                                        <p>Qtd</p>
-                                                        <p>Valor</p>
-                                                        <p>Total</p>
-                                                    </div>
-                                                    <template x-for="item in items">
-                                                        <div class="flex justify-between gap-1 rounded p-2 bg-gray-200">
-                                                            <p x-text="item.cantidad"></p>
-                                                            <p x-text="item.nombre"></p>
-                                                            <p x-text="item.precio"></p>
-                                                            <p x-text="item.total"></p>
-                                                        </div>
-                                                    </template>
-                                                    <div class="mt-2 flex font-semibold justify-end gap-1 rounded p-2 bg-gray-200">
-                                                        <span>Total</span>
-                                                        <span x-text="title"></span>
-                                                    </div>
-                                                </div>
-
-                                                <div>
-                                                    <p>Nessa venda recebemos as seguentes formas de pagamento</p>
-                                                    <template x-for="metodo in metodos">
-                                                        <div class="flex justify-between gap-1 rounded p-2 bg-gray-200">
-                                                            <p x-text="metodo.nombre"></p>
-                                                            <p x-text="metodo.declarado"></p>
-                                                            <p x-text="metodo.monto"></p>
-                                                        </div>
-                                                    </template>
-
-                                                </div>
-
-                                                
-                                            </div>
-                                            <!-- Dialog Footer -->
-                                            <div class="flex flex-col-reverse justify-between gap-2 border-t border-zinc-300 bg-zinc-100/60 p-4 dark:border-zinc-700 dark:bg-zinc-900/20 sm:flex-row sm:items-center md:justify-end">
-                                                <button @click="modalIsOpen = false" type="button" class="cursor-pointer whitespace-nowrap rounded px-4 py-2 text-center text-sm font-medium tracking-wide text-neutral-600 transition hover:opacity-75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700 active:opacity-100 active:outline-offset-0 dark:text-zinc-200 dark:focus-visible:outline-sky-600">Remind me later</button>
-                                                <button @click="modalIsOpen = false" type="button" class="cursor-pointer whitespace-nowrap rounded bg-sky-700 px-4 py-2 text-center text-sm font-medium tracking-wide text-white transition hover:opacity-75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700 active:opacity-100 active:outline-offset-0 dark:bg-sky-600 dark:text-white dark:focus-visible:outline-sky-600">Upgrade Now</button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    
                                 </div>
                                 
                             </td>
