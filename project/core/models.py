@@ -63,6 +63,7 @@ class Producto(models.Model):
     descripcion = models.TextField(blank=True, null=True)
     precio = models.DecimalField(max_digits=10, decimal_places=2, blank=True)
     es_fabricado = models.BooleanField(default=False)
+    peso = models.PositiveIntegerField(default=0)
 
     objects = ProductoQueryset.as_manager()
     
@@ -177,12 +178,14 @@ class Ralada(models.Model):
         return self.sobra_final - self.sobra_final
     
     def __str__(self):
-        return f'Ralada {self.numero} - {self.saco}'
+        return f'Ralada do {self.saco.tipo_guarana} Nº {self.numero} do Saco Nº {self.saco.numero}'
 
 class ProduccionDetalle(models.Model):
     produccion = models.ForeignKey(Produccion, related_name="detalles", on_delete=models.CASCADE)
     producto = models.ForeignKey(Producto, related_name="producciones", on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
+    peso_producido = models.PositiveIntegerField(default=0)
+
     fecha_registro = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:

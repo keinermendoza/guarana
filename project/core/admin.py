@@ -263,12 +263,12 @@ class ProduccionDetalleInline(TabularInline):
 class ProduccionAdmin(ModelAdmin):
     # change template for extend from custom base.html that uses custom templatetag 
     change_form_template = "admin/ralada_change_form.html"
-    fieldsets = (
-        ("Producción", {
-            "classes": ["tab"],
-            'fields': ('consumo', 'nota')
-        }),
-    )
+    # fieldsets = (
+    #     ("Producción", {
+    #         "classes": ["tab"],
+    #         'fields': ('consumo', 'nota')
+    #     }),
+    # )
   
     inlines = [RaladaInline, ProduccionDetalleInline]
 

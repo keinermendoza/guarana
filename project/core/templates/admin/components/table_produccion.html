@@ -1,7 +1,8 @@
 {% load unfold %}
 
 <div 
-    x-data="{title:'', total:'', items:[], fecha:'', metodos: [], modalIsOpen:false}"
+    x-data="{title:'', total:'', items:[], fecha:'', bastones:'', pesoInicial:'', sobraInicial:'', sobraFinal:'', pesoFinal:'', perdida:'', consumo:'', modalIsOpen:false}"
+    x-effect="perdida = parseInt(pesoInicial) - parseInt(pesoFinal)"
     class="{% if card_included == 1 %}-m-6{% else %}lg:border lg:rounded-md lg:shadow-sm{% endif %} overflow-x-auto lg:dark:border-gray-800">
    
     <div x-cloak x-show="modalIsOpen" x-transition.opacity.duration.200ms x-trap.inert.noscroll="modalIsOpen" @keydown.esc.window="modalIsOpen = false" @click.self="modalIsOpen = false" class="fixed inset-0 z-30 flex items-end justify-center bg-black/20 p-4 pb-8 backdrop-blur-md sm:items-center lg:p-8" role="dialog" aria-modal="true" aria-labelledby="defaultModalTitle">
@@ -22,40 +23,80 @@
             <!-- Dialog Body -->
             <div class="p-4 flex flex-col gap-4">
                 <p>Ralada realizada no dia <span class="font-semibold" x-text="fecha"></span></p> 
+                
                 <div>
                     <p class="mb-2">
                         A continução se presentan os produtos produzidos nesa Ralada 
                     </p>
-                    <div class="p-2 bg-gray-200 rounded">
-                        <div class="mt-2 flex font-semibold justify-between gap-1 rounded p-2 bg-gray-200">
-                            <p>Produto</p>
-                            <p>Qtd</p>
-                        </div>
+                    <table class="table-auto w-full text-left bg-gray-200 rounded">
+                        <thead class="">
+                            <tr>
+                                <th class="p-2">Produto</th>
+                                <th class="p-2">Peso</th>
+                                <th class="p-2">Qtd</th>
+                                <th class="p-2">Produzido</th>
+                            </tr>
+                        </thead>
+                        <tbody class="">
                         <template x-for="item in items">
-                            <div class="flex justify-between gap-1 rounded p-2 bg-gray-200">
-                                <span x-text="item.nombre"></span>
-                                <span x-text="item.cantidad"></span>
-                            </div>
-                        </template>
+                                <tr>
+                                    <td class="p-2" x-text="item.nombre"></td>
+                                    <td class="p-2"><span x-text="item.peso"></span> g</td>
+                                    <td class="p-2"><span x-text="item.cantidad"></span> Uds</td>
+                                    <td class="p-2"><span x-text="item.pesoProducido"></span> g</td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+
+
+                <article>
+                    <p class="mb-2">
+                        A continução se apresentam informações detalhadas do procesamento da <span class="font-semibold" x-text="title"></span>
+                    </p>
                     
-                    </div>
-                </div>
-
-                <div>
-                    <p class="mb-2">Esta é a Ralada <span class="font-semibold" x-text="numero"></span> produzida do <span class="font-semibold" x-text="saco"></span> do <span class="font-semibold" x-text="variedad"></span></p>
-                    <p>De <span class="font-semibold" x-text="bastones"></span> bastões</p>
-
-                    <p>A continuação se mostram os dados do procesamento da ralada</p>
-                   
-                    <template x-for="metodo in metodos">
-                        <div class="flex justify-between gap-1 rounded p-2 bg-gray-200">
-                            <p x-text="metodo.nombre"></p>
-                            <p x-text="metodo.declarado"></p>
-                            <p x-text="metodo.monto"></p>
+                    {% comment %} pesoInicial:'', sobraInicial:'', sobraFinal:'', pesoFinal:'', perdida:'', consumo:'' {% endcomment %}
+                   <div class="rounded p-2 bg-gray-200">
+                        <div class="flex justify-between gap-1 rounded p-2">
+                            <span class="font-semibold">Bastões procesados</span>
+                            <p><span x-text="bastones"></span> Uds</p>
                         </div>
-                    </template>
 
-                </div>
+                        <div class="flex -mx-2 bg-gray-300 justify-between gap-1 rounded p-2 px-4">
+                            <span class="font-semibold">Peso dos Bastões</span>
+                            <p><span x-text="pesoInicial"></span> g</p>
+                        </div>
+
+
+                        <div class="flex justify-between gap-1 rounded p-2">
+                            <span class="font-semibold">Sobra depois de Ralar</span>
+                            <p><span x-text="sobraInicial"></span> g</p>
+                        </div>
+
+                        <div class="flex -mx-2 bg-gray-300 justify-between gap-1 rounded p-2 px-4">
+                            <span class="font-semibold">Sobra depois de Socar</span>
+                            <p><span x-text="sobraFinal"></span> g</p>
+                        </div>
+
+                        <div class="flex justify-between gap-1 rounded p-2">
+                            <span class="font-semibold">Peso Gurana procesado</span>
+                            <p><span x-text="pesoFinal"></span> g</p>
+                        </div>
+
+                        <div class="flex -mx-2 bg-gray-300 justify-between gap-1 rounded p-2 px-4">
+                            <span class="font-semibold">Perca</span>
+                            <p><span x-text="perdida"></span> g</p>
+                        </div>
+
+                        <div class="flex justify-between gap-1 rounded p-2">
+                            <span class="font-semibold">Consumo</span>
+                            <p><span x-text="consumo"></span> g</p>
+                        </div>
+
+                    </div>
+
+                </article>
 
                 
             </div>
@@ -84,15 +125,8 @@
                                     {
                                         'nombre': '{{producto.producto.nombre}}',
                                         'cantidad':'{{producto.cantidad}}',
-                                    },
-                                {% endfor %}
-                                ],
-                            metodosPago: [
-                                {% for uso_metodo in venta.usos_metodo_pago.all %}
-                                    {
-                                        'nombre': '{{uso_metodo.metodo.nombre}}',
-                                        'monto': '{{uso_metodo.monto}}',
-                                        'declarado': '{{uso_metodo.metodo.declarado}}'
+                                        'peso': '{{producto.producto.peso}}',
+                                        'pesoProducido': '{{producto.peso_producido}}'
                                     },
                                 {% endfor %}
                                 ],
@@ -100,13 +134,13 @@
                     class="{% if striped == 1 %}{% cycle '' 'bg-gray-50 dark:bg-white/[.02]' %}{% endif %} block {% if not card_included == 1 %}border mb-3 rounded-md shadow-sm{% else %}border-t{% endif %} lg:table-row lg:border-none lg:mb-0 lg:shadow-none dark:border-gray-800">
                             <td class="px-3 py-2 align-middle flex border-t border-gray-200 font-normal gap-4 min-w-0 overflow-hidden text-left before:flex before:capitalize before:content-[attr(data-label)] before:items-center before:mr-auto first:border-t-0 lg:before:hidden lg:first:border-t lg:py-3 lg:table-cell dark:border-gray-800 {% if card_included == 1 %}lg:first:pl-6 lg:last:pr-6{% endif %}" 
                             data-label="Produçaão">
-                                {{produccion}}
+                                {{produccion.ralada}}
                             </td>
                             <td class="px-3 py-2 align-middle flex border-t border-gray-200 font-normal gap-4 min-w-0 overflow-hidden text-left before:flex before:capitalize before:content-[attr(data-label)] before:items-center before:mr-auto first:border-t-0 lg:before:hidden lg:first:border-t lg:py-3 lg:table-cell dark:border-gray-800 {% if card_included == 1 %}lg:first:pl-6 lg:last:pr-6{% endif %}" 
                             data-label="Detalhes"
                             >
                                 <div class="ml-auto w-fit" >
-                                    <button @click="modalIsOpen = true; title='{{produccion}}', total='{{venta.total}}', fecha='{{produccion.ralada.fecha_ralada}}', items=prodcutosItems, metodos=metodosPago"
+                                    <button @click="modalIsOpen = true; title='{{produccion.ralada}}', fecha='{{produccion.ralada.fecha_ralada}}', items=prodcutosItems, bastones='{{produccion.ralada.cantidad_bastones}}', pesoInicial='{{produccion.ralada.peso_inicial}}', pesoFinal='{{produccion.ralada.peso_final}}', sobraInicial='{{produccion.ralada.sobra_inicial}}', sobraFinal='{{produccion.ralada.sobra_final}}', consumo='{{produccion.consumo}}' "
                      
                                     
                                     type="button" class="text-gray-800 cursor-pointer whitespace-nowrap rounded text-center text-sm font-medium tracking-wide transition hover:opacity-75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700 active:opacity-100 active:outline-offset-0 dark:bg-sky-600 dark:text-white dark:focus-visible:outline-sky-600">
