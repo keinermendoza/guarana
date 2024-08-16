@@ -204,8 +204,10 @@ class InventarioAdmin(ModelAdmin):
         year = tz.now().year
         month = tz.now().month
 
-        produccion = Ralada.objects.peso_y_cantidades_procesadas_kpi(year=year, month=month)
-        produccion_mensual = Producto.objects.produccion_al_mes_progress_chart(year=year, month=month)
+        
+        produccion = Produccion.objects.filter(ralada__fecha_ralada__month=month, ralada__fecha_ralada__year=year)
+        procesamiento = Ralada.objects.peso_y_cantidades_procesadas_kpi(year=year, month=month)
+        productos_elaborados = Producto.objects.produccion_al_mes_progress_chart(year=year, month=month)
         navegation = get_home_navegation(request)
         
         context = self.admin_site.each_context(request)
@@ -213,11 +215,11 @@ class InventarioAdmin(ModelAdmin):
             {
                 "navigation": navegation,
                 "table_template": table_template,
-                "table_context":[],
+                "table_context":produccion,
                 "main_graphic_bar_title": "Vendas Diarias Segum Metodo de Pago",
-                "kpi": produccion,
+                "kpi": procesamiento,
                 "progress_section_title":"Produtos Produzidos No Mes",
-                "progress": produccion_mensual,
+                "progress": productos_elaborados,
             },
         )
 
