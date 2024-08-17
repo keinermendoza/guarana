@@ -113,7 +113,8 @@ class InventarioAdmin(ModelAdmin):
        
         # data para graficos
         ventas_diaria_metodos = Venta.objects.grafico_bar_metodos_de_pago_diario(year=year, month=month)
-        totales = Venta.objects.kpi_stats_totales_por_metodo(year=year, month=month)
+        fechas_venta_diaria = ventas_diaria_metodos.pop()
+        kpi = Venta.objects.kpi_totales_por_metodo(year=year, month=month)
         producto_vendido = Producto.objects.cantidad_vendida_progress_chart(year=year, month=month)
         venta_mensual_productos = VentaItem.objects.grafico_bar_montos_productos_vendidos_mensual(year=year, month=month)
         
@@ -126,58 +127,14 @@ class InventarioAdmin(ModelAdmin):
                 "table_context":ventas,
                 "navigation": navegation,
                 "main_graphic_bar_title": "Monto de Ventas Diarias Segum Metodo de Pago",
-                "kpi": [
-                    {
-                        "title": "Vendas no Cartão",
-                        "metric": f"R${totales['carton']}",
-                        "footer": mark_safe(
-                            '<strong class="text-green-600 font-medium">Inclui vendas de todos os tipos de Cartão</strong>'
-                        ),
-                    },
-                    {
-                        "title": "Vendas em Dinheiro",
-                        "metric": f"R${totales['efectivo']}",
-                        "footer": mark_safe(
-                            '<strong class="text-green-600 font-medium">Vendas em Dinheiro</strong>'
-                        ),
-                    },
-                    {
-                        "title": "Vendas em Pix",
-                        "metric": f"R${totales['efectivo']}",
-                        "footer": mark_safe(
-                            '<strong class="text-green-600 font-medium">Vendas em Pix</strong>'
-                        ),
-                    },
-                ],
+                "kpi":kpi,
                 "progress_section_title":"Produtos Vendidos por Quantidades",
                 "progress": producto_vendido,
-                
                 "chart_diario": json.dumps(
                     {
-                        "labels": ventas_diaria_metodos['fechas'],
-                        "datasets": [
-                            {
-                                "label": "Dinheiro",
-                                "data": ventas_diaria_metodos['efectivo'],
-                                "borderRadius":5,
-                                "barThickness": 10,
-                                "backgroundColor": "#f0abfc",
-                            },
-                            {
-                                "label": "Cartão",
-                                "data": ventas_diaria_metodos['carton'],
-                                "borderRadius":5,
-                                "barThickness": 10,
-                                "backgroundColor": "#9333ea",
-                            },
-                            {
-                                "label": "Pix",
-                                "data": ventas_diaria_metodos['pix'],
-                                "borderRadius":5,
-                                "barThickness": 10,
-                                "backgroundColor": "#f43f5e",
-                            },
-                        ],
+                        "labels": [*fechas_venta_diaria],
+                        "datasets": ventas_diaria_metodos,
+                        
                     }
                 ),
                 "chart_mensual_title": f"Monto Vendido por Produto no mes",

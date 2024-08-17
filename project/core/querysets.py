@@ -6,79 +6,8 @@ from django.db.models.functions import Cast, Coalesce
 from django.utils.safestring import mark_safe
 from django.utils import timezone as tz
 
-# referencia MetodoPago.Tipos en models
-METODO_PAGO_PIX = "P"
-METODO_PAGO_EFECTIVO = "D"
-METODO_PAGO_CARTON = "C"
-
-
-class VentaQueryset(models.QuerySet):
-
-    # TODO: DELETE
-    def cobros_en_ventas_segun_metodo_de_pago(
-        self, 
-        year: int,
-        month: int,
-    ) -> models.QuerySet[dict]:
-        """
-        cobros en ventas segun metodos de pago
-        Nota: en ocaciones una venta se relaiza con mas de un metodo de pago
-        HELPER para funciones:
-        - kpi_stats_totales_por_metodo
-        - grafico_bar_metodos_de_pago_diario
-
-        """
-        queryset = self.filter(fecha_venta__year=year, fecha_venta__month=month)\
-            .annotate(metodo=models.F('usos_metodo_pago__metodo__tipo'))\
-            .values('fecha_venta', 'metodo')\
-            .annotate(total_ventas=models.Sum('usos_metodo_pago__monto', output_field=models.DecimalField()))\
-            .order_by('fecha_venta', 'metodo')
-
-        fechas = []
-        efectivo = []
-        pix = []
-        carton = []
-
-        # Crear un set para rastrear las fechas únicas
-        fechas_set = set()
-
-        # Inicializar un diccionario para almacenar las ventas por fecha y método de pago
-        ventas_por_metodo = defaultdict(lambda: {METODO_PAGO_EFECTIVO: 0, METODO_PAGO_PIX: 0, METODO_PAGO_CARTON: 0})
-
-        # Recorrer las ventas y llenar el diccionario
-        for venta in queryset:
-            fecha = venta['fecha_venta'].strftime('%d/%m')
-            metodo_pago = venta['metodo']
-            total_ventas = venta['total_ventas']
-
-            # Añadir la fecha al set de fechas
-            fechas_set.add(fecha)
-
-            # key metodo_pago es provista por defaultdict
-            ventas_por_metodo[fecha][metodo_pago] = total_ventas
-
-        # Ordenar las fechas
-        fechas_ordenadas = sorted(fechas_set)
-
-        # Llenar las listas para efectivo, pix y carton
-        for fecha in fechas_ordenadas:
-            fechas.append(fecha)
-            efectivo.append(ventas_por_metodo[fecha][METODO_PAGO_EFECTIVO])
-            pix.append(ventas_por_metodo[fecha][METODO_PAGO_PIX])
-            carton.append(ventas_por_metodo[fecha][METODO_PAGO_CARTON])
-
-        # Crear el diccionario final
-        ventas =  {
-            "fechas": fechas,
-            "efectivo": efectivo,
-            "pix": pix,
-            "carton": carton
-        }
-
-        return ventas
-    
-    # TODO: CREATE DEDICATE METHOD
-    def kpi_stats_totales_por_metodo(
+class VentaQueryset(models.QuerySet):  
+    def kpi_totales_por_metodo(
         self,
         year: int = tz.now().year,
         month: int = tz.now().month
@@ -87,20 +16,27 @@ class VentaQueryset(models.QuerySet):
         devuelve los totales mensuales para cada metodo de pago
         en formato para KPI
         """
-        
-        totales = self.cobros_en_ventas_segun_metodo_de_pago(year=year, month=month)
+        queryset = self.filter(fecha_venta__year=year, fecha_venta__month=month)\
+            .annotate(metodo=models.F('usos_metodo_pago__metodo__tipo'))\
+            .values('metodo')\
+            .annotate(total_ventas=models.Sum('usos_metodo_pago__monto', output_field=models.DecimalField()))\
+            
+        produccion = []
+        metodos = {'P':'Vendas em Pix', 'D':'Vendas em Dinheiro', 'C':'Vendas no Cartão'}
+        footers = {'P':'Vendas em Pix', 'D':'Vendas em Dinheiro', 'C':'Inclui vendas de todos os tipos de Cartão'}
+        for item in queryset:
+            metodo = metodos[item['metodo']]
+            footer = footers[item['metodo']]
 
-        carton = sum(totales["carton"])
-        efectivo = sum(totales["efectivo"])
-        pix = sum(totales["pix"])
+            produccion.append({
+                "title":metodo,
+                "metric":f"R$ {item['total_ventas']}",
+                "footer": mark_safe(f'<strong class="text-green-600 font-medium">{footer}</strong>')
+            })
+        return produccion
 
-        return {
-            'carton': carton,
-            'efectivo':efectivo,
-            'pix': pix
-        }
     
-    # TODO: CREATE DEDICATE METHOD
+    
     def grafico_bar_metodos_de_pago_diario(
         self,
         year: int = tz.now().year,
@@ -111,19 +47,53 @@ class VentaQueryset(models.QuerySet):
         con el formato apropiado para usar
         GRAFICO DE BARRAS en chartjs
         """
-        totales = self.cobros_en_ventas_segun_metodo_de_pago(year=year, month=month)
-        carton = [[0, float(i)] for i in totales["carton"]]
-        efectivo = [[0, float(i)] for i in totales["efectivo"]]
-        pix = [[0, float(i)] for i in totales["pix"]]
+        queryset = self.filter(fecha_venta__year=year, fecha_venta__month=month)\
+            .annotate(metodo=models.F('usos_metodo_pago__metodo__tipo'))\
+            .values('fecha_venta', 'metodo')\
+            .annotate(total_ventas=models.Sum('usos_metodo_pago__monto', output_field=models.FloatField()))\
+            .order_by('fecha_venta', 'metodo')
 
-        return {
-            'carton': carton,
-            'efectivo':efectivo,
-            'pix': pix,
-            'fechas': totales['fechas']
-        }
+        # desagregating data
+        fechas_set = set()
+        carton = {"nombre":"Cartão", "data":[]}
+        efectivo = {"nombre":"Dinheiro", "data": []}
+        pix = {"nombre":"Pix", "data": []}
 
-    
+        # for help mapping data
+        metodos = {'C':carton, 'D':efectivo, 'P':pix}
+
+        # the value for 'metodo_pago' will be 0 by default
+        ventas_por_metodo = defaultdict(lambda: {'C': 0, 'D': 0, 'P': 0})
+
+        for venta in queryset:
+            fecha = venta['fecha_venta'].strftime('%d/%m')
+            fechas_set.add(fecha)
+
+            metodo_pago = venta['metodo'] # C || D || P
+            total_ventas = venta['total_ventas']
+            ventas_por_metodo[fecha][metodo_pago] = total_ventas # this works because defaultdict
+
+        fechas_ordenadas = sorted(fechas_set)
+        for fecha in fechas_ordenadas:
+            for metodo in ventas_por_metodo[fecha]:
+                metodos[metodo]["data"].append([0, ventas_por_metodo[fecha][metodo]])
+
+        # formating data for bar chart
+        datasets = []
+        background_colors = ["#f0abfc", "#9333ea", "#f43f5e"]
+        for i, metodo in enumerate([carton, efectivo, pix]):
+            index = i % len(background_colors)
+
+            datasets.append({
+                "label": metodo["nombre"],
+                "data":metodo["data"],
+                "borderRdius":5,
+                "barThickness": 5,
+                "backgroundColor":background_colors[index],
+            })
+
+        datasets.append(fechas_set) # this must be pop in the view
+        return datasets
 
 class VentaItemQueryset(models.QuerySet):
     def grafico_bar_montos_productos_vendidos_mensual(

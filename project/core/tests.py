@@ -107,40 +107,9 @@ class VentaQuerysetMethods(TestCase):
         Venta.objects.create(nota='out range of time', total=200, fecha_venta='2024-06-13')
 
 
-    def test__ventas_queryset__cobros_en_ventas_segun_metodo_de_pago(self):
-        """
-        regresa listas representando el total de la venta diaria
-        una lista por cada metodo de pago, un item por cada día
-        """
-        pix = MetodoPago.objects.get(nombre="Pix")
-        efectivo = MetodoPago.objects.get(nombre="Dinheiro")
-
-        for i, venta in enumerate(Venta.objects.all(), 1):
-            if i % 2 == 1:
-                UsoMetodoPago.objects.create(venta=venta, monto=venta.total, metodo=pix)
-
-            else:
-                UsoMetodoPago.objects.create(venta=venta, monto=venta.total, metodo=efectivo)
-
-        resultados = Venta.objects.cobros_en_ventas_segun_metodo_de_pago(year=2024, month=8)
-        
-        self.assertIn('11/08', resultados['fechas'])
-        self.assertIn('12/08', resultados['fechas'])
-        self.assertIn('13/08', resultados['fechas'])
-
-        self.assertEquals(len(resultados['efectivo']), 3)
-        self.assertEquals(sum(resultados['efectivo']), 775)
-
-        self.assertEquals(len(resultados['pix']), 3)
-        self.assertEquals(sum(resultados['pix']), 525)
-
-        self.assertEquals(len(resultados['carton']), 3)
-        self.assertEquals(sum(resultados['carton']), 0)
 
 
-    def test_venta_queryset__kpi_stats_totales_por_metodo(self):
-        """
-        """
+    def test_venta_queryset__kpi_totales_por_metodo(self):
         pix = MetodoPago.objects.get(nombre="Pix")
         efectivo = MetodoPago.objects.get(nombre="Dinheiro")
 
@@ -150,12 +119,16 @@ class VentaQuerysetMethods(TestCase):
             else:
                 UsoMetodoPago.objects.create(venta=venta, monto=venta.total, metodo=efectivo)
 
-        resultados = Venta.objects.kpi_stats_totales_por_metodo(year=2024, month=8)
+        resultados = Venta.objects.kpi_totales_por_metodo(year=2024, month=8)
 
-        self.assertEquals(len(resultados), 3)
-        self.assertEquals(resultados['efectivo'], 775)
-        self.assertEquals(resultados['pix'], 525)
-        self.assertEquals(resultados['carton'], 0)
+        keys = {'title', 'metric', 'footer'}
+        self.assertEquals(len(resultados), 2)
+        self.assertTrue(keys.issubset(resultados[0].keys()))
+        self.assertTrue(keys.issubset(resultados[1].keys()))
+        self.assertEquals(resultados[0]['metric'], 'R$ 775.00')
+        self.assertEquals(resultados[1]['metric'], 'R$ 525.00')
+
+
 
     def test_venta_queryset__grafico_bar_metodos_de_pago_diario(self):
         """
@@ -171,13 +144,26 @@ class VentaQuerysetMethods(TestCase):
 
         resultados = Venta.objects.grafico_bar_metodos_de_pago_diario(year=2024, month=8)
 
-        self.assertEquals(len(resultados), 4)
-        self.assertEquals(len(resultados['efectivo']), 3)
-        self.assertEquals(len(resultados['pix']), 3)
-        self.assertEquals(len(resultados['carton']), 3)
+        keys = {"label", "data", "borderRdius", "barThickness", "backgroundColor"}
+        self.assertTrue(keys.issubset(resultados[0].keys()))
+        self.assertTrue(keys.issubset(resultados[1].keys()))
+        self.assertTrue(keys.issubset(resultados[2].keys()))
 
-        self.assertEquals(resultados['carton'], [[0,0],[0,0],[0,0]])
-        self.assertEquals(resultados['efectivo'], [[0,200],[0,175],[0,400]])
+        self.assertEquals(len(resultados), 4)
+
+        self.assertEquals(len(resultados[0]["data"]), 3)
+        self.assertEquals(len(resultados[1]["data"]), 3)
+        self.assertEquals(len(resultados[2]["data"]), 3)
+
+        self.assertIsInstance(resultados[0]["data"], list)
+        self.assertIsInstance(resultados[1]["data"], list)
+        self.assertIsInstance(resultados[2]["data"], list)
+        self.assertIsInstance(resultados[3], set)
+        
+
+        self.assertEquals(resultados[0]['data'][0], [0, 0])
+        self.assertEquals(resultados[1]['data'][0], [0, 200.0])
+        self.assertEquals(resultados[2]['data'][0], [0, 100.0])
 
     def test_venta_items_queryset__grafico_bar_montos_productos_vendidos_mensual(self):
         efectivo = MetodoPago.objects.get(nombre="Dinheiro")
@@ -204,23 +190,6 @@ class VentaQuerysetMethods(TestCase):
 
         self.assertEquals(resultados[0]['data'], [560])
         self.assertEquals(resultados[1]['data'], [700])
-
-
-
-    def test_cantidad_vendida_bar_chart(self):
-        luz_70 = Producto.objects.get(nombre="luzeia 70gm")
-        luz_120 = Producto.objects.get(nombre="luzeia 120gm")
-        efectivo = MetodoPago.objects.get(nombre="Dinheiro")
-
-        for venta in Venta.objects.all():
-            UsoMetodoPago.objects.create(venta=venta, monto=venta.total, metodo=efectivo)
-            VentaItem.objects.create(producto=luz_70, venta=venta, cantidad=2, precio=luz_70.precio)
-            VentaItem.objects.create(producto=luz_120, venta=venta, cantidad=1, precio=luz_120.precio)
-            
-
-        result1 = Producto.objects.cantidad_vendida_bar_chart(year=2024, month=8)
-        print(result1)
-        self.assertEquals(1,1)
 
 
 class RaladaQuerysetMethods(TestCase):
