@@ -1,0 +1,6 @@
+{% for producto in productos %}
+    {% if forloop.first %}
+    <option value="" selected="">Selecione valor</option>
+    {% endif %}
+    <option value="{{producto.id}}">{{producto.nombre}}</option>
+{% endfor %}

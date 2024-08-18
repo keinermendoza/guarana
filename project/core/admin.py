@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.utils.formats import date_format
 from django_htmx.http import trigger_client_event
 from django.utils import timezone as tz
-
+from django.http import JsonResponse
 
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -39,7 +39,9 @@ from .models import (
 from .admin_forms import (
     InlineRaladaForm,
     InlineVentaItemAddForm,
-    InlineUsoMetodoPagoForm
+    InlineUsoMetodoPagoForm,
+    ProduccionForm,
+    ProduccionDetalleFormset
 ) 
 
 from unfold.decorators import display
@@ -199,6 +201,29 @@ class MetodoPagoAdmin(ModelAdmin):
 class SacoAdmin(ModelAdmin):
     list_display = ["__str__", "tipo_guarana"]
 
+    def get_urls(self):
+        """
+        adds customs urls and views for handeling upload/delete related images
+        """
+        urls = super().get_urls()
+        my_urls = [
+            path("update_product_options/", self.admin_site.admin_view(self.update_product_options), name='update_product_options'),
+        ]
+        return my_urls + urls
+    
+    def update_product_options(self, request, *args, **kwargs):
+        partial_template = "admin/forms/produccion_detalle_producto_options.html"
+        saco_id = request.GET.get('saco')
+        try:
+            saco = Saco.objects.get(id=saco_id)
+            productos = Producto.objects.filter(
+                es_fabricado=True,
+                tipo_guarana=saco.tipo_guarana
+            )
+        except Saco.DoesNotExist:
+            productos = []
+        
+        return render(request, partial_template, {"productos":productos})
 
 @admin.register(Producto)
 class ProductoAdmin(ModelAdmin):
@@ -211,8 +236,9 @@ class RaladaInline(StackedInline):
     tab = True
 
 class ProduccionDetalleInline(TabularInline):
+    formset = ProduccionDetalleFormset
     model = ProduccionDetalle
-    autocomplete_fields = ["producto"]
+    # autocomplete_fields = ["producto"]
 
     
 
@@ -220,12 +246,7 @@ class ProduccionDetalleInline(TabularInline):
 class ProduccionAdmin(ModelAdmin):
     # change template for extend from custom base.html that uses custom templatetag 
     change_form_template = "admin/ralada_change_form.html"
-    # fieldsets = (
-    #     ("Producción", {
-    #         "classes": ["tab"],
-    #         'fields': ('consumo', 'nota')
-    #     }),
-    # )
+    form = ProduccionForm
   
     inlines = [RaladaInline, ProduccionDetalleInline]
 
@@ -237,23 +258,31 @@ class ProduccionAdmin(ModelAdmin):
     @display(description="N° Ralada", label=True)
     def numero_ralada(self, obj):
         return f"{obj.ralada.numero}"
+    
+    def get_formsets_with_inlines(self, request, obj=None):
+        formsets, inline_instances = super().get_formsets_with_inlines(request, obj)
+        # print(formsets)
+        self.form.formsets = formsets
+        # self.form.formsets = dict(zip([inline.__class__.__name__.lower() for inline in inline_instances], formsets))
+        # return zip(formsets, inline_instances)
+        return super().get_formsets_with_inlines(request, obj)
 
-    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
-        """
-        add context for change template render by templatetag tab_list.
-        tab_list is loaded in base.html 
-        reads the context and renders tab_list.html passing some of the context
-        """
-        extra_context = extra_context or {}
-        extra_context.update({
-            "put_first_ralada_tab": True
-        })
-        return super().changeform_view(
-            request,
-            object_id,
-            form_url,
-            extra_context=extra_context,
-        )
+    # def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+    #     """
+    #     add context for change template render by templatetag tab_list.
+    #     tab_list is loaded in base.html 
+    #     reads the context and renders tab_list.html passing some of the context
+    #     """
+    #     extra_context = extra_context or {}
+    #     extra_context.update({
+    #         "put_first_ralada_tab": True
+    #     })
+    #     return super().changeform_view(
+    #         request,
+    #         object_id,
+    #         form_url,
+    #         extra_context=extra_context,
+    #     )
     
     
 

@@ -1,4 +1,5 @@
 
+from typing import Collection, Iterable
 from django.db import models
 from django.utils import timezone as tz
 from django.utils.safestring import mark_safe
@@ -9,6 +10,7 @@ from .querysets import (
     VentaItemQueryset,
     ProductoQueryset
 )
+
 
 class TipoGuarana(models.Model):
     nombre = models.CharField(max_length=100)
@@ -64,6 +66,7 @@ class Producto(models.Model):
     precio = models.DecimalField(max_digits=10, decimal_places=2, blank=True)
     es_fabricado = models.BooleanField(default=False)
     peso = models.PositiveIntegerField(default=0)
+    tipo_guarana = models.ForeignKey(TipoGuarana, related_name="productos", on_delete=models.SET_NULL, null=True, blank=True)
 
     objects = ProductoQueryset.as_manager()
     
@@ -129,7 +132,7 @@ class Saco(models.Model):
         return f'Saco {self.numero} - {self.tipo_guarana.nombre} - {self.peso} kg'
 
     def __str__(self):
-        return f'Saco {self.numero}'
+        return f'{self.tipo_guarana.nombre.capitalize()} - Saco {self.numero}'
     
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -144,6 +147,14 @@ class Produccion(models.Model):
     def __str__(self):
         return f'Produccion de {self.ralada}'
     
+    def save(self, *args, **kwargs ) -> None:
+        self.full_clean()
+        return super().save(*args, **kwargs)
+    
+    def full_clean(self, *args, **kwargs) -> None:
+        return super().full_clean(*args, **kwargs)
+    
+
     class Meta:
         verbose_name = "Produccion"
         verbose_name_plural = "- Producciones"
@@ -157,7 +168,7 @@ class Ralada(models.Model):
 
     numero = models.PositiveIntegerField(blank=True, null=True)
     cantidad_bastones = models.PositiveIntegerField(blank=True, null=True)
-    saco = models.ForeignKey(Saco, related_name="ralada", on_delete=models.SET_NULL, blank=True, null=True)
+    saco = models.ForeignKey(Saco, related_name="ralada", on_delete=models.PROTECT)
     peso_inicial = models.PositiveIntegerField(blank=True, null=True)
     sobra_inicial = models.PositiveIntegerField(blank=True, null=True)
     sobra_final = models.PositiveIntegerField(blank=True, null=True)
@@ -184,9 +195,13 @@ class ProduccionDetalle(models.Model):
     produccion = models.ForeignKey(Produccion, related_name="detalles", on_delete=models.CASCADE)
     producto = models.ForeignKey(Producto, related_name="producciones", on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
-    peso_producido = models.PositiveIntegerField(default=0)
+    # peso_producido = models.PositiveIntegerField(default=0)
 
     fecha_registro = models.DateTimeField(auto_now=True)
+
+    @property
+    def peso_producido(self):
+        return self.cantidad * self.producto.peso
 
     def __str__(self) -> str:
         return f'{self.cantidad} x {self.producto}'

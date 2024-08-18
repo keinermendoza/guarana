@@ -30,7 +30,10 @@ class MinimumRequieredFieldsPerClass(TestCase):
 
     def test_ralada_required_fields(self):
         produccion = Produccion.objects.create()
-        ralada = Ralada.objects.create(produccion=produccion)
+        tipo = TipoGuarana.objects.create(nombre="Maue do Indio")
+        saco = Saco.objects.create(tipo_guarana=tipo, numero=288)
+
+        ralada = Ralada.objects.create(produccion=produccion, saco=saco)
         self.assertIsInstance(ralada, Ralada)
 
     def test_saco_test_required_fields(self):
