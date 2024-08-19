@@ -3,6 +3,7 @@ from typing import Collection, Iterable
 from django.db import models
 from django.utils import timezone as tz
 from django.utils.safestring import mark_safe
+from django.core.exceptions import ValidationError
 
 from .querysets import (
     VentaQueryset,
@@ -47,7 +48,7 @@ class MetodoPago(models.Model):
         verbose_name_plural = "Metodos de Pago"
 
 class UsoMetodoPago(models.Model):
-    monto = models.DecimalField(max_digits=10, decimal_places=2, blank=True)
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
     metodo = models.ForeignKey(MetodoPago, related_name="usos_metodo_pago", on_delete=models.CASCADE)
     venta = models.ForeignKey("Venta", related_name="usos_metodo_pago", on_delete=models.CASCADE)
     declarado = models.BooleanField(default=False)
@@ -83,6 +84,11 @@ class Venta(models.Model):
     class Meta:
         verbose_name = "Venta"
         verbose_name_plural = "Ventas"
+
+    # def clean(self):
+    #     super().clean()
+    #     if not self.usos_metodo_pago.exists():
+    #         raise ValidationError("A venda debe ter pelo menos um método de pago asociado.")
 
     @property
     def fecha_corta(self) -> str:

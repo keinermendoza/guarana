@@ -37,6 +37,8 @@ from .models import (
 )
 
 from .admin_forms import (
+    # VentaForm,
+
     InlineRaladaForm,
     InlineVentaItemAddForm,
     InlineUsoMetodoPagoForm,
@@ -45,7 +47,8 @@ from .admin_forms import (
     InlineProduccionDetalleForm,
 
     RaladaInlineFormset,
-    ProduccionDetalleFormset
+    ProduccionDetalleFormset,
+    InlineUsoMetodoPagoFormset
 ) 
 
 from unfold.decorators import display
@@ -54,6 +57,8 @@ from unfold.admin import (
     TabularInline,
     StackedInline
 ) 
+from django.core.exceptions import ValidationError
+
 
 
 def get_home_navegation(request):
@@ -313,12 +318,15 @@ class UsoMetodoPagoInline(TabularInline):
     model = UsoMetodoPago
     extra = 1
     form = InlineUsoMetodoPagoForm
+    formset= InlineUsoMetodoPagoFormset
 
     def get_formset(self, request, obj=None, **kwargs):
         formset = super().get_formset(request, obj, **kwargs)
         metodo = formset.form.base_fields['metodo']
         metodo.widget.can_add_related = metodo.widget.can_change_related = metodo.widget.can_delete_related = metodo.widget.can_view_related = False
         return formset
+    
+  
 
 class CompraVidrosInline(NonrelatedTabularInline):
     form = InlineCompraVidrosForm
@@ -340,8 +348,8 @@ class CompraVidrosInline(NonrelatedTabularInline):
 
 @admin.register(Venta)
 class VentaAdmin(ModelAdmin):
+    list_display = ["__str__", "metodos_de_pago"]
     inlines = [VentaItemInline, UsoMetodoPagoInline, CompraVidrosInline]
-
     fieldsets = (
         ("Venta", {
             "classes": ["tab"],
@@ -354,4 +362,15 @@ class VentaAdmin(ModelAdmin):
     )
 
 
+
+
+    @display(description="metodos")
+    def metodos_de_pago(self, obj):
+        usos_metodos = obj.usos_metodo_pago.all()
+        metodos_str = ""
+        if usos_metodos:
+            for uso_metodo in usos_metodos:
+                metodos_str += f"{uso_metodo.metodo.get_tipo_display()} R$ {uso_metodo.monto} | "
+            metodos_str = metodos_str.strip()
+        return metodos_str
     

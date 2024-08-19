@@ -120,7 +120,21 @@ class RaladaInlineFormset(BaseInlineFormSet):
 
         self.instance.peso_maximo = peso_maximo
         self.instance.tipo_guarana = saco.tipo_guarana
-            
+
+# class VentaForm(forms.ModelForm):
+#     def clean(self):
+#         cleaned_data = super().clean()
+
+#         # Accede a los datos de los inlines
+#         inline_formset = self.formsets['usos_metodo_pago']
+#         usos_metodo_pago_data = inline_formset.cleaned_data
+
+#         # Validar que haya al menos un inline relacionado
+#         if not any(data for data in usos_metodo_pago_data if not data.get('DELETE', False)):
+#             raise ValidationError("Debe haber al menos un método de pago en esta venta.")
+
+#         return cleaned_data
+
 class InlineVentaItemAddForm(forms.ModelForm):
     class Meta:
         model = VentaItem
@@ -151,7 +165,21 @@ class InlineVentaItemAddForm(forms.ModelForm):
 
         return cleaned_data
     
-    
+class InlineUsoMetodoPagoFormset(BaseInlineFormSet):
+    def clean(self):
+        cleaned_data = super(InlineUsoMetodoPagoFormset, self).clean() 
+        forms_cleaned = []
+        for form in self.forms:
+            # if not form.is_valid():
+            #     return 
+            
+            if form.cleaned_data:
+                forms_cleaned.append(form.cleaned_data)
+                
+        if not any(forms_cleaned):
+            raise ValidationError("A venta requer pelo menos um metodo de pago")
+        return cleaned_data
+
     
 class InlineUsoMetodoPagoForm(forms.ModelForm):
     class Meta:
@@ -161,6 +189,7 @@ class InlineUsoMetodoPagoForm(forms.ModelForm):
     class Media:
         js = ['admin/js/vendas_formset.js']
 
+    
 class InlineCompraVidrosForm(forms.ModelForm):
     class Meta:
         fields = ["precio", "cantidad"]
