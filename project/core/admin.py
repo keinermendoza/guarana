@@ -1,5 +1,5 @@
 import random
-
+from decimal import Decimal, ROUND_CEILING
 from django import forms
 from django.db import models
 from django.urls import path
@@ -41,6 +41,10 @@ from .admin_forms import (
     InlineVentaItemAddForm,
     InlineUsoMetodoPagoForm,
     ProduccionForm,
+    InlineCompraVidrosForm,
+    InlineProduccionDetalleForm,
+
+    RaladaInlineFormset,
     ProduccionDetalleFormset
 ) 
 
@@ -51,16 +55,12 @@ from unfold.admin import (
     StackedInline
 ) 
 
-# from .views import get_extra_context
 
 def get_home_navegation(request):
     return  [
         {"title": _("Vendas"), "link": reverse_lazy('admin:vendas'), "active":reverse_lazy('admin:vendas') == request.path_info},
         {"title": _("Produção"), "link": reverse_lazy('admin:producao'), "active":reverse_lazy('admin:producao') == request.path_info},
     ]
-    
-    
-
 
 @admin.register(CompraVidros)
 class CompraVidrosAdmin(ModelAdmin):
@@ -68,14 +68,31 @@ class CompraVidrosAdmin(ModelAdmin):
 
 @admin.register(UsoMetodoPago)
 class UsoMetodoPagoAdmin(ModelAdmin):
-   list_display = ["monto", "fecha_venta", "metodo", "declarado"]
-   list_display_links = None
-   
-   @display(description="data")
-   def fecha_venta(self, obj):
-       if obj.venta.fecha_venta:
-            return date_format(timezone.localtime(obj.venta.fecha_venta), use_l10n=True)
-       return ""
+    list_display = ["monto", "fecha_venta", "metodo", "calculo", "declarado"]
+    list_display_links = None
+    actions = ["declarar_pago", "retirar_declaracion"]
+    list_filter = ["metodo"]
+
+    @display(description="data")
+    def fecha_venta(self, obj):
+        if obj.venta.fecha_venta:
+            return obj.venta.fecha_corta
+        return ""
+
+    @display(description="Calculo")
+    def calculo(self, obj):
+        decimals = 3
+        result = obj.monto / 170
+        result = result.quantize(Decimal(f'1.{"0" * decimals}'), rounding=ROUND_CEILING)
+        return result
+    
+    @admin.action(description="Marcar pago como declarado")
+    def declarar_pago(modeladmin, request, queryset):
+        queryset.update(declarado=True)
+
+    @admin.action(description="Marcar pago como NO declarado")
+    def retirar_declaracion(modeladmin, request, queryset):
+        queryset.update(declarado=False)
 
 @admin.register(Consumo)
 class ConsumoAdmin(ModelAdmin):
@@ -233,13 +250,13 @@ class ProductoAdmin(ModelAdmin):
 class RaladaInline(StackedInline):
     model = Ralada
     form = InlineRaladaForm
+    formset = RaladaInlineFormset
     tab = True
 
 class ProduccionDetalleInline(TabularInline):
     formset = ProduccionDetalleFormset
+    form = InlineProduccionDetalleForm
     model = ProduccionDetalle
-    # autocomplete_fields = ["producto"]
-
     
 
 @admin.register(Produccion)
@@ -259,47 +276,53 @@ class ProduccionAdmin(ModelAdmin):
     def numero_ralada(self, obj):
         return f"{obj.ralada.numero}"
     
-    def get_formsets_with_inlines(self, request, obj=None):
-        formsets, inline_instances = super().get_formsets_with_inlines(request, obj)
-        # print(formsets)
-        self.form.formsets = formsets
-        # self.form.formsets = dict(zip([inline.__class__.__name__.lower() for inline in inline_instances], formsets))
-        # return zip(formsets, inline_instances)
-        return super().get_formsets_with_inlines(request, obj)
-
-    # def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
-    #     """
-    #     add context for change template render by templatetag tab_list.
-    #     tab_list is loaded in base.html 
-    #     reads the context and renders tab_list.html passing some of the context
-    #     """
-    #     extra_context = extra_context or {}
-    #     extra_context.update({
-    #         "put_first_ralada_tab": True
-    #     })
-    #     return super().changeform_view(
-    #         request,
-    #         object_id,
-    #         form_url,
-    #         extra_context=extra_context,
-    #     )
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        """
+        add context for change template render by templatetag tab_list.
+        tab_list is loaded in base.html 
+        reads the context and renders tab_list.html passing some of the context
+        """
+        extra_context = extra_context or {}
+        extra_context.update({
+            "put_first_ralada_tab": True
+        })
+        return super().changeform_view(
+            request,
+            object_id,
+            form_url,
+            extra_context=extra_context,
+        )
     
     
 
 class VentaItemInline(TabularInline):
+   
+
     model = VentaItem
-    autocomplete_fields = ["producto"]
     form = InlineVentaItemAddForm
     extra = 1
+
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        producto = formset.form.base_fields['producto']
+        producto.widget.can_add_related = producto.widget.can_change_related = producto.widget.can_delete_related = producto.widget.can_view_related = False
+        return formset
+
 
 class UsoMetodoPagoInline(TabularInline):
     model = UsoMetodoPago
     extra = 1
     form = InlineUsoMetodoPagoForm
 
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        metodo = formset.form.base_fields['metodo']
+        metodo.widget.can_add_related = metodo.widget.can_change_related = metodo.widget.can_delete_related = metodo.widget.can_view_related = False
+        return formset
+
 class CompraVidrosInline(NonrelatedTabularInline):
+    form = InlineCompraVidrosForm
     model = CompraVidros
-    fields = ["precio", "cantidad"]
     extra = 1
 
     def get_form_queryset(self, obj):
@@ -317,7 +340,7 @@ class CompraVidrosInline(NonrelatedTabularInline):
 
 @admin.register(Venta)
 class VentaAdmin(ModelAdmin):
-    inlines = [UsoMetodoPagoInline, VentaItemInline, CompraVidrosInline]
+    inlines = [VentaItemInline, UsoMetodoPagoInline, CompraVidrosInline]
 
     fieldsets = (
         ("Venta", {

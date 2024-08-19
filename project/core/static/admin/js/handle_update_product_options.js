@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     const productSelect = document.querySelector('[data-trigger="handle_update_product_options"]')
     const sacoId = productSelect.options[productSelect.selectedIndex].value;
-    handleUpdate(sacoId)
+    if (!sacoId) {
+        handleUpdate(sacoId)
+    }
 })
 
 document.addEventListener('update_product_inline_options', (e) => {

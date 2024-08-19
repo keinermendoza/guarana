@@ -11,7 +11,6 @@ from .querysets import (
     ProductoQueryset
 )
 
-
 class TipoGuarana(models.Model):
     nombre = models.CharField(max_length=100)
 
@@ -154,10 +153,34 @@ class Produccion(models.Model):
     def full_clean(self, *args, **kwargs) -> None:
         return super().full_clean(*args, **kwargs)
     
-
     class Meta:
         verbose_name = "Produccion"
         verbose_name_plural = "- Producciones"
+    
+    def __init__(self, *args, **kwargs):
+       super(Produccion, self).__init__(*args, **kwargs)
+       self._peso_maximo = None
+       self._tipo_guarana = None
+    
+    @property
+    def peso_maximo(self) -> int | None:
+        return self._peso_maximo
+    
+    @property
+    def tipo_guarana(self) -> TipoGuarana | None:
+        return self._tipo_guarana
+    
+    @peso_maximo.setter
+    def peso_maximo(self, n:int):
+       self._peso_maximo = n
+
+    @tipo_guarana.setter
+    def tipo_guarana(self, tipo_guarana:TipoGuarana):
+        self._tipo_guarana = tipo_guarana 
+
+    
+
+    
 
 class Ralada(models.Model):
     """
@@ -195,7 +218,6 @@ class ProduccionDetalle(models.Model):
     produccion = models.ForeignKey(Produccion, related_name="detalles", on_delete=models.CASCADE)
     producto = models.ForeignKey(Producto, related_name="producciones", on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
-    # peso_producido = models.PositiveIntegerField(default=0)
 
     fecha_registro = models.DateTimeField(auto_now=True)
 
@@ -207,11 +229,15 @@ class ProduccionDetalle(models.Model):
         return f'{self.cantidad} x {self.producto}'
 
 class CompraVidros(models.Model):
-    precio = models.DecimalField(max_digits=10, decimal_places=2, blank=True)
+    precio = models.DecimalField(max_digits=10, decimal_places=2, blank=True, default=1)
     cantidad = models.PositiveIntegerField()
     fecha_registro = models.DateTimeField(auto_now=True)
     fecha_compra = models.DateField(default=tz.now)
     nota = models.TextField(blank=True, null=True)
+
+    def __init__(self, *args, **kwargs):
+       super(CompraVidros, self).__init__(*args, **kwargs)
+       self._precio = 1 
 
 
 class Gasto(models.Model):

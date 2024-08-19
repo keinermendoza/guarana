@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
+from django.templatetags.static import static
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -215,6 +216,9 @@ ROOT_URLCONF = os.environ.get('ROOT_URLCONF', 'config.urls')
 
 
 UNFOLD = {
+    "STYLES": [
+        lambda request: static("css/tailwind.css"),
+    ],
     "SITE_HEADER": _("Loja de Guaraná Admin"),
     "SITE_TITLE": _("Loja de Guaraná"),
     "SITE_SYMBOL": "settings",
