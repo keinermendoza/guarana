@@ -1,22 +1,18 @@
-import random
 from decimal import Decimal, ROUND_CEILING
-from django import forms
-from django.db import models
 from django.urls import path
 from django.shortcuts import render
 from django.contrib import admin
-from django.contrib.admin.options import BaseModelAdmin
-from unfold.contrib.inlines.admin import NonrelatedTabularInline
-from django.utils import timezone
-from django.utils.formats import date_format
-from django_htmx.http import trigger_client_event
-from django.utils import timezone as tz
-from django.http import JsonResponse
-
+from django.core.exceptions import ValidationError
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
-import json
-from django.urls import reverse_lazy
+
+from unfold.contrib.inlines.admin import NonrelatedTabularInline
+from unfold.decorators import display
+from unfold.admin import (
+    ModelAdmin,
+    TabularInline,
+    StackedInline
+) 
 
 from .models import (
     TipoGuarana,
@@ -36,7 +32,12 @@ from .models import (
     AnotacionInventario 
 )
 
-from .admin_forms import (
+from ._admin.views import (
+    producao,
+    vendas,
+)
+
+from ._admin.forms import (
     # VentaForm,
 
     InlineRaladaForm,
@@ -51,21 +52,6 @@ from .admin_forms import (
     InlineUsoMetodoPagoFormset
 ) 
 
-from unfold.decorators import display
-from unfold.admin import (
-    ModelAdmin,
-    TabularInline,
-    StackedInline
-) 
-from django.core.exceptions import ValidationError
-
-
-
-def get_home_navegation(request):
-    return  [
-        {"title": _("Vendas"), "link": reverse_lazy('admin:vendas'), "active":reverse_lazy('admin:vendas') == request.path_info},
-        {"title": _("Produção"), "link": reverse_lazy('admin:producao'), "active":reverse_lazy('admin:producao') == request.path_info},
-    ]
 
 @admin.register(CompraVidros)
 class CompraVidrosAdmin(ModelAdmin):
@@ -107,7 +93,6 @@ class ConsumoAdmin(ModelAdmin):
 class GastoAdmin(ModelAdmin):
    pass
 
-
 @admin.register(Inventario)
 class InventarioAdmin(ModelAdmin):
     custom_template = "admin/admin_home_partials/main_content.html"
@@ -118,95 +103,24 @@ class InventarioAdmin(ModelAdmin):
         """
         urls = super().get_urls()
         my_urls = [
-            path("vendas/", self.admin_site.admin_view(self.vendas), name='vendas'),
-            path("producao/", self.admin_site.admin_view(self.producao), name='producao'),
+            path("vendas/", self.admin_site.admin_view(self.vendas_view), name='vendas'),
+            path("producao/", self.admin_site.admin_view(self.producao_view), name='producao'),
         ]
         return my_urls + urls
-    
 
-    def vendas(self, request, *args, **kwargs):
-        """
-        custom view for shows sales with charts
-        and also sales table
-        """
-        table_template = "admin/components/table_ventas.html"
-        year = tz.now().year
-        month = tz.now().month
-
-        ventas = Venta.objects.all()
-       
-        # data para graficos
-        ventas_diaria_metodos = Venta.objects.grafico_bar_metodos_de_pago_diario(year=year, month=month)
-        fechas_venta_diaria = ventas_diaria_metodos.pop()
-        kpi = Venta.objects.kpi_totales_por_metodo(year=year, month=month)
-        producto_vendido = Producto.objects.cantidad_vendida_progress_chart(year=year, month=month)
-        venta_mensual_productos = VentaItem.objects.grafico_bar_montos_productos_vendidos_mensual(year=year, month=month)
-        
-        navegation = get_home_navegation(request)
-        
+    def vendas_view(self, request, *args, **kwargs):
         context = self.admin_site.each_context(request)
-        context.update(
-            {
-                "table_template": table_template,
-                "table_context":ventas,
-                "navigation": navegation,
-                "main_graphic_bar_title": "Monto de Ventas Diarias Segum Metodo de Pago",
-                "kpi":kpi,
-                "progress_section_title":"Produtos Vendidos por Quantidades",
-                "progress": producto_vendido,
-                "chart_diario": json.dumps(
-                    {
-                        "labels": [*fechas_venta_diaria],
-                        "datasets": ventas_diaria_metodos,
-                        
-                    }
-                ),
-                "chart_mensual_title": f"Monto Vendido por Produto no mes",
-                "chart_mensual": json.dumps(
-                    {
-                        "labels": [f"Mes {month}"],
-                        "datasets": venta_mensual_productos,
-                    }
-                )
-               
-            },
-        )
+        kwargs["context"] = context 
+        kwargs["custom_template"] = self.custom_template
+        return vendas(request, *args, **kwargs)
 
-        resp = render(request, self.custom_template, context)
-        return trigger_client_event(resp, "reload_charts", after="swap")
-    
-    def producao(self, request, *args, **kwargs):
-        """
-        custom view shows production related info
-        and also custom production table  
-        """
-        table_template = "admin/components/table_produccion.html"
 
-        year = tz.now().year
-        month = tz.now().month
-
-        
-        produccion = Produccion.objects.filter(ralada__fecha_ralada__month=month, ralada__fecha_ralada__year=year)
-        procesamiento = Ralada.objects.peso_y_cantidades_procesadas_kpi(year=year, month=month)
-        productos_elaborados = Producto.objects.produccion_al_mes_progress_chart(year=year, month=month)
-        navegation = get_home_navegation(request)
-        
+    def producao_view(self, request, *args, **kwargs):
         context = self.admin_site.each_context(request)
-        context.update(
-            {
-                "navigation": navegation,
-                "table_template": table_template,
-                "table_context":produccion,
-                "main_graphic_bar_title": "Vendas Diarias Segum Metodo de Pago",
-                "kpi": procesamiento,
-                "progress_section_title":"Produtos Produzidos No Mes",
-                "progress": productos_elaborados,
-            },
-        )
-
-        resp = render(request, self.custom_template, context)
-        return trigger_client_event(resp, "reload_charts", after="swap")
-
+        kwargs["context"] = context 
+        kwargs["custom_template"] = self.custom_template
+        return producao(request, *args, **kwargs)
+    
 @admin.register(AnotacionInventario)
 class AnotacionInventarioAdmin(ModelAdmin):
    pass
@@ -297,12 +211,8 @@ class ProduccionAdmin(ModelAdmin):
             form_url,
             extra_context=extra_context,
         )
-    
-    
 
 class VentaItemInline(TabularInline):
-   
-
     model = VentaItem
     form = InlineVentaItemAddForm
     extra = 1
@@ -325,8 +235,6 @@ class UsoMetodoPagoInline(TabularInline):
         metodo = formset.form.base_fields['metodo']
         metodo.widget.can_add_related = metodo.widget.can_change_related = metodo.widget.can_delete_related = metodo.widget.can_view_related = False
         return formset
-    
-  
 
 class CompraVidrosInline(NonrelatedTabularInline):
     form = InlineCompraVidrosForm
@@ -360,9 +268,6 @@ class VentaAdmin(ModelAdmin):
             'fields': ['fecha_venta', 'nota'],
         }),
     )
-
-
-
 
     @display(description="metodos")
     def metodos_de_pago(self, obj):
