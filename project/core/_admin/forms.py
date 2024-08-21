@@ -195,14 +195,20 @@ class InlineVentaItemAddForm(forms.ModelForm):
         model = VentaItem
         fields = "__all__"
         widgets = {
-            'producto':ProductoSelectWidget(attrs={'data-producto':'update-price'}),
+            'producto':ProductoSelectWidget(attrs={
+                'data-producto':'update-price',
+                'x-on:change':'$dispatch("calculate")'
+            }),
             'precio': forms.TextInput(attrs={
                 'class': 'pointer-events-none bg-gray-600	border bg-white font-medium min-w-20 rounded-md shadow-sm text-gray-500 text-sm dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300  dark:group-[.errors]:border-red-500  px-3 py-2 w-full max-w-2xl'
                 ,"tabindex":"-1"
                 , "style":"background-color:#eee"
                 , "data-target":"item_precio_calculate_total"
             }),
-            'cantidad': UnfoldAdminTextInputWidget(attrs={'data-target':'item_cantidad_calculate_total'})  
+            'cantidad': UnfoldAdminTextInputWidget(attrs={
+                'data-target':'item_cantidad_calculate_total',
+                'x-on:input':'$dispatch("calculate")'
+            })  
         }
     class Media:
         js = ["admin/js/update_price.js"]
@@ -228,7 +234,7 @@ class InlineUsoMetodoPagoFormset(BaseInlineFormSet):
         """
         checks that 'Venta' has almost one valid 'UsoMetodoPago' on it 
         """
-        cleaned_data = super(InlineUsoMetodoPagoFormset, self).clean() 
+        super(InlineUsoMetodoPagoFormset, self).clean() 
         valid_forms  = []
         for form in self.forms:
             if form.is_valid():
@@ -267,5 +273,8 @@ class InlineCompraVidrosForm(forms.ModelForm):
                 , "data-target" :"compravidros_precio_calculate_total"
                  
             }),
-            'cantidad': UnfoldAdminTextInputWidget(attrs={"data-target":"compravidros_cantidad_calculate_total"}),  
+            'cantidad': UnfoldAdminTextInputWidget(attrs={
+                "data-target":"compravidros_cantidad_calculate_total",
+                'x-on:input':'$dispatch("calculate")'
+            }),  
         }

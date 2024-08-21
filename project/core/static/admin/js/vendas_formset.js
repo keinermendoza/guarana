@@ -29,7 +29,7 @@ const helperAddCalculateButtonToPage = (button) => {
     const total_input = document.getElementById("id_total");
     createContainerAndReorderItems(total_input.parentElement, button)
 
-    button.addEventListener('click', () => {
+    const calculate = () => {
         let totalMontoItems = 0
         let totalMontoVidros = 0
 
@@ -49,7 +49,11 @@ const helperAddCalculateButtonToPage = (button) => {
         total_input.value = totalMontoItems - totalMontoVidros 
         const reload = new Event('reload_copy')
         document.dispatchEvent(reload)
-    })
+    }
+
+    document.addEventListener('calculate', calculate)
+    button.addEventListener('click', calculate)
+    
 }
 
 const helperAddCopyButtonToPage = (button) => {
