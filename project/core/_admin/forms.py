@@ -1,3 +1,4 @@
+from typing import Any
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
 
@@ -20,6 +21,7 @@ from .widgets import ProductoSelectWidget
 from django.core.exceptions import ValidationError
 from django.forms.models import BaseInlineFormSet
 
+# TODO: update like VentaForm
 class ProduccionDetalleFormset(BaseInlineFormSet):
     """
     Validation through two inlines
@@ -30,7 +32,7 @@ class ProduccionDetalleFormset(BaseInlineFormSet):
         print(self.instance.tipo_guarana)
         for form in self.forms:
             if not form.is_valid():
-                return # other errors exist, so don't bother
+                return 
             
             if form.cleaned_data and not form.cleaned_data.get('DELETE'):
                 producto = form.cleaned_data.get('producto')
@@ -109,6 +111,7 @@ class InlineRaladaForm(forms.ModelForm):
             'admin/js/handle_update_product_options.js'
         ]
 
+# TODO: update like VentaForm
 class RaladaInlineFormset(BaseInlineFormSet):
     def clean(self):
         super(RaladaInlineFormset, self).clean()
@@ -124,7 +127,70 @@ class RaladaInlineFormset(BaseInlineFormSet):
         self.instance.peso_maximo = peso_maximo
         self.instance.tipo_guarana = saco.tipo_guarana
 
+class VentaForm(forms.ModelForm):
+    """
+    Validates the main form using the asociated inlines
+    Uses get_form in admin for insert formset as kwargs
+    """
+    class Meta:
+        fields = "__all__"
+
+    def clean(self) -> dict[str, Any]:
+        """
+        first checks main form and asociated inlines are valid
+        the checks the sells and posible discount match with main field 'total'
+        """
+        main_cleaned_data = super().clean()
+        if not "total" in main_cleaned_data or not all([formset.is_valid() for formset in self.formsets]):
+            return
+        
+        total_venta = main_cleaned_data["total"]
+        total_monto_items = 0
+        total_monto_compra_vidrios = 0
+
+        for formset in self.formsets:
+            for inline_form in formset:
+                if inline_form.is_valid():
+                    if cleaned_data := inline_form.clean():
+                        if isinstance(inline_form, InlineVentaItemAddForm):
+                            total_item = cleaned_data.get("cantidad") * cleaned_data.get("precio") 
+                            total_monto_items += total_item
+
+                        elif isinstance(inline_form, InlineCompraVidrosForm):
+                            total_compra = cleaned_data.get("cantidad") * cleaned_data.get("precio") 
+                            total_monto_compra_vidrios += total_compra
+
+        if total_venta != total_monto_items - total_monto_compra_vidrios:
+            raise ValidationError("O total da venda não corresponde com os valores dos items e a compra de vidros")
+
+    def __init__(self, *args, **kwargs):
+        """
+        extract the kwargs inserted in admin get_form method 
+        """
+        self.request = kwargs.pop('request')
+        self.formsets = kwargs.pop('formsets')
+
+        super().__init__(*args, **kwargs)
+
+class InlineVentaItemFormset(BaseInlineFormSet):
+    def clean(self) -> None:
+        """
+        checks that 'Venta' has almost one valid 'VentaItem' on it 
+        """
+        super(InlineVentaItemFormset, self).clean()
+        valid_forms  = []
+        for form in self.forms:
+            if form.is_valid():
+                valid_forms.append(form.clean())
+            
+        if not any(valid_forms):
+            raise ValidationError("A venda debe ter pelo menos um produto registrado")
+
 class InlineVentaItemAddForm(forms.ModelForm):
+    """
+    adds Custom widget for update price when change product select 
+    adds script and custom data atribute for use as selector
+    """
     class Meta:
         model = VentaItem
         fields = "__all__"
@@ -138,42 +204,43 @@ class InlineVentaItemAddForm(forms.ModelForm):
             }),
             'cantidad': UnfoldAdminTextInputWidget(attrs={'data-target':'item_cantidad_calculate_total'})  
         }
-        
     class Media:
         js = ["admin/js/update_price.js"]
-    
+
     def clean(self):
+        """
+        if there is price inserted dinamically by Javascript uses the product price
+        NOTE: price is supose to be an 'soft-not-editable' field
+        """
         cleaned_data = super().clean()
         producto = cleaned_data.get('producto')  # Obtiene el producto
         precio = cleaned_data.get('precio')
 
-        # Verifica si no hay precio y hay un producto seleccionado
         if not precio and producto:
             try:
                 cleaned_data['precio'] = producto.precio
             except Producto.DoesNotExist:
                 raise forms.ValidationError("El producto seleccionado no existe.")
-
         return cleaned_data
     
 class InlineUsoMetodoPagoFormset(BaseInlineFormSet):
     def clean(self):
+        """
+        checks that 'Venta' has almost one valid 'UsoMetodoPago' on it 
+        """
         cleaned_data = super(InlineUsoMetodoPagoFormset, self).clean() 
-        forms_cleaned = []
+        valid_forms  = []
         for form in self.forms:
-            if not form.is_valid():
-                return 
+            if form.is_valid():
+                valid_forms.append(form.clean())
                 
-            
-            if form.cleaned_data:
-                forms_cleaned.append(form.cleaned_data)
-                
-        if not any(forms_cleaned):
+        if not any(valid_forms):
             raise ValidationError("A venta requer pelo menos um metodo de pago")
-        return cleaned_data
-
     
 class InlineUsoMetodoPagoForm(forms.ModelForm):
+    """
+    adds script and custom data atribute for use as selector
+    """
     class Meta:
         model = UsoMetodoPago
         fields = "__all__"
@@ -186,6 +253,9 @@ class InlineUsoMetodoPagoForm(forms.ModelForm):
 
     
 class InlineCompraVidrosForm(forms.ModelForm):
+    """
+    adds script and custom data atribute for use as selector
+    """
     class Meta:
         fields = ["cantidad", "precio"]
         model = CompraVidros

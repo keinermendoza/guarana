@@ -1,4 +1,10 @@
 from decimal import Decimal, ROUND_CEILING
+from typing import Any, Dict
+from django.db.models import Model
+from django import forms
+from django.forms import Form
+from django.http import HttpRequest
+from django.template.response import TemplateResponse
 from django.urls import path
 from django.shortcuts import render
 from django.contrib import admin
@@ -38,7 +44,7 @@ from ._admin.views import (
 )
 
 from ._admin.forms import (
-    # VentaForm,
+    VentaForm,
 
     InlineRaladaForm,
     InlineVentaItemAddForm,
@@ -49,7 +55,8 @@ from ._admin.forms import (
 
     RaladaInlineFormset,
     ProduccionDetalleFormset,
-    InlineUsoMetodoPagoFormset
+    InlineUsoMetodoPagoFormset,
+    InlineVentaItemFormset
 ) 
 
 
@@ -215,6 +222,7 @@ class ProduccionAdmin(ModelAdmin):
 class VentaItemInline(TabularInline):
     model = VentaItem
     form = InlineVentaItemAddForm
+    formset = InlineVentaItemFormset
     extra = 1
 
     def get_formset(self, request, obj=None, **kwargs):
@@ -256,6 +264,7 @@ class CompraVidrosInline(NonrelatedTabularInline):
 
 @admin.register(Venta)
 class VentaAdmin(ModelAdmin):
+    form = VentaForm
     list_display = ["__str__", "metodos_de_pago"]
     inlines = [VentaItemInline, UsoMetodoPagoInline, CompraVidrosInline]
     fieldsets = (
@@ -279,3 +288,28 @@ class VentaAdmin(ModelAdmin):
             metodos_str = metodos_str.strip()
         return metodos_str
     
+    def get_form(self, request, obj=None, change=False, **kwargs):
+
+        formsets, inline_instances = self._create_formsets(
+                request,
+                obj,
+                change=change,
+            )
+        DefaultClassForm = super().get_form(request, obj, **kwargs)
+
+        class RequestForm(DefaultClassForm):
+            def __new__(cls, *args, **kwargs):
+                kwargs['request'] = request
+                kwargs['formsets'] = formsets
+                return DefaultClassForm(*args, **kwargs)
+
+        return RequestForm
+        
+       
+                            # inline_cleaned_data.
+
+
+                # if not inlinie_instance.something: 
+                    # raise ValidationError("something is wrong")
+        
+      
