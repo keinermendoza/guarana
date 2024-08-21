@@ -229,38 +229,29 @@ UNFOLD = {
         "show_all_applications": False,  # Dropdown with all applications and models
         "navigation": [
             {
+                "title": _("Inicio"),
+                "items": [
+                    {
+                        "title": "Ver Graficos",
+                        "icon": "home",  # Supported icon set: https://fonts.google.com/icons
+                        "link": reverse_lazy("admin:index"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },],
+            },
+            {
                 "title": _("Registrar"),
                 "separator": True,  # Top border
                 "items": [
                     {
-                        "title": "Vendas",
-                        "icon": "store",  # Supported icon set: https://fonts.google.com/icons
+                        "title": "Nova Venda",
+                        "icon": "trending_up",  # Supported icon set: https://fonts.google.com/icons
                         "link": reverse_lazy("admin:core_venta_add"),
                         "permission": lambda request: request.user.is_superuser,
                     },
                     {
-                        "title": "Produção",
+                        "title": "Nova Produção",
                         "icon": "factory",  # Supported icon set: https://fonts.google.com/icons
                         "link": reverse_lazy("admin:core_produccion_add"),
-                        "permission": lambda request: request.user.is_superuser,
-                    },
-                ],
-            },
-            {
-                "title": _("Ver Registros"),
-                "separator": True,  # Top border
-                # "collapsible": True,  # Collapsible group of links
-                "items": [
-                    {
-                        "title": "Vendas",
-                        "icon": "store",  # Supported icon set: https://fonts.google.com/icons
-                        "link": reverse_lazy("admin:core_venta_changelist"),
-                        "permission": lambda request: request.user.is_superuser,
-                    },
-                    {
-                        "title": "Produção",
-                        "icon": "factory",  # Supported icon set: https://fonts.google.com/icons
-                        "link": reverse_lazy("admin:core_produccion_changelist"),
                         "permission": lambda request: request.user.is_superuser,
                     },
                 ],
@@ -272,12 +263,12 @@ UNFOLD = {
                 "items": [
                     {
                         "title": "Tipos de Guaraná",
-                        "icon": "local_cafe",  # Supported icon set: https://fonts.google.com/icons
+                        "icon": "splitscreen_left",  # Supported icon set: https://fonts.google.com/icons
                         "link": reverse_lazy("admin:core_tipoguarana_changelist"),
                         "permission": lambda request: request.user.is_superuser,
                     },
                     {
-                        "title": "Metodos de Pago",
+                        "title": "Formas de Pagamento",
                         "icon": "add_card",  # Supported icon set: https://fonts.google.com/icons
                         "link": reverse_lazy("admin:core_metodopago_changelist"),
                         "permission": lambda request: request.user.is_superuser,
@@ -294,12 +285,7 @@ UNFOLD = {
                         "link": reverse_lazy("admin:core_producto_changelist"),
                         "permission": lambda request: request.user.is_superuser,
                     },
-                     {
-                        "title": "Compra de Vidros",
-                        "icon": "local_mall",  # Supported icon set: https://fonts.google.com/icons
-                        "link": reverse_lazy("admin:core_compravidros_changelist"),
-                        "permission": lambda request: request.user.is_superuser,
-                    },
+                   
                 ],
             },
              {
@@ -307,13 +293,31 @@ UNFOLD = {
                 "separator": True,  # Top border
                 "collapsible": True,  # Collapsible group of links
                 "items": [
+                     {
+                        "title": "Vendas",
+                        "icon": "trending_up",  # Supported icon set: https://fonts.google.com/icons
+                        "link": reverse_lazy("admin:core_venta_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
                     {
-                        "title": "Vendas por Metodo",
-                        "icon": "add_card",  # Supported icon set: https://fonts.google.com/icons
+                        "title": "Produções",
+                        "icon": "factory",  # Supported icon set: https://fonts.google.com/icons
+                        "link": reverse_lazy("admin:core_produccion_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                    {
+                        "title": "Pagamentos Recebidos",
+                        "icon": "request_quote",  # Supported icon set: https://fonts.google.com/icons
                         "link": reverse_lazy("admin:core_usometodopago_changelist"),
                         "permission": lambda request: request.user.is_superuser,
                     },
-                    
+                   
+                    {
+                        "title": "Compra de Vidros",
+                        "icon": "local_mall",  # Supported icon set: https://fonts.google.com/icons
+                        "link": reverse_lazy("admin:core_compravidros_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
                 ],
             },
         ],

@@ -134,6 +134,13 @@ class VentaForm(forms.ModelForm):
     """
     class Meta:
         fields = "__all__"
+        widgets = {
+            'total': forms.TextInput(attrs={
+                'class': 'pointer-events-none bg-gray-600	border bg-white font-medium min-w-20 rounded-md shadow-sm text-gray-500 text-sm dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300  dark:group-[.errors]:border-red-500  px-3 py-2 w-full max-w-2xl'
+                ,"tabindex":"-1"
+                , "style":"background-color:#eee"
+            })
+         }
 
     def clean(self) -> dict[str, Any]:
         """
@@ -159,6 +166,7 @@ class VentaForm(forms.ModelForm):
                         elif isinstance(inline_form, InlineCompraVidrosForm):
                             total_compra = cleaned_data.get("cantidad") * cleaned_data.get("precio") 
                             total_monto_compra_vidrios += total_compra
+                        
 
         if total_venta != total_monto_items - total_monto_compra_vidrios:
             raise ValidationError("O total da venda não corresponde com os valores dos items e a compra de vidros")
@@ -197,7 +205,7 @@ class InlineVentaItemAddForm(forms.ModelForm):
         widgets = {
             'producto':ProductoSelectWidget(attrs={
                 'data-producto':'update-price',
-                'x-on:change':'$dispatch("calculate")'
+                'x-on:change.debounce':'$dispatch("calculate")'
             }),
             'precio': forms.TextInput(attrs={
                 'class': 'pointer-events-none bg-gray-600	border bg-white font-medium min-w-20 rounded-md shadow-sm text-gray-500 text-sm dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300  dark:group-[.errors]:border-red-500  px-3 py-2 w-full max-w-2xl'
@@ -236,13 +244,21 @@ class InlineUsoMetodoPagoFormset(BaseInlineFormSet):
         """
         super(InlineUsoMetodoPagoFormset, self).clean() 
         valid_forms  = []
+        total_pago = 0
+        
         for form in self.forms:
             if form.is_valid():
-                valid_forms.append(form.clean())
-                
+                cleaned_data = form.clean()
+                if "monto" in cleaned_data:
+                    total_pago += cleaned_data["monto"]        
+                valid_forms.append(cleaned_data)
+        
         if not any(valid_forms):
             raise ValidationError("A venta requer pelo menos um metodo de pago")
     
+        if total_pago != self.instance.total:
+            raise ValidationError(f"o total pagado ({total_pago}) não corresponde com o total da venda ({self.instance.total})")
+
 class InlineUsoMetodoPagoForm(forms.ModelForm):
     """
     adds script and custom data atribute for use as selector

@@ -112,8 +112,15 @@ class InventarioAdmin(ModelAdmin):
         my_urls = [
             path("vendas/", self.admin_site.admin_view(self.vendas_view), name='vendas'),
             path("producao/", self.admin_site.admin_view(self.producao_view), name='producao'),
+            path("test/", self.admin_site.admin_view(self.test), name='test')
         ]
         return my_urls + urls
+
+    def test(self, request, *args, **kwargs):
+        context = self.admin_site.each_context(request)
+        context["table_context"] = Venta.objects.all()  
+        return render(request, "admin/components/table_ventas.html", context)
+
 
     def vendas_view(self, request, *args, **kwargs):
         context = self.admin_site.each_context(request)
@@ -244,23 +251,25 @@ class UsoMetodoPagoInline(TabularInline):
         metodo.widget.can_add_related = metodo.widget.can_change_related = metodo.widget.can_delete_related = metodo.widget.can_view_related = False
         return formset
 
-class CompraVidrosInline(NonrelatedTabularInline):
+# class CompraVidrosInline(NonrelatedTabularInline):
+class CompraVidrosInline(TabularInline):
+
     form = InlineCompraVidrosForm
     model = CompraVidros
     extra = 1
 
-    def get_form_queryset(self, obj):
-        """
-        Gets all nonrelated objects needed for inlines. Method must be implemented.
-        """
-        return self.model.objects.all()
+    # def get_form_queryset(self, obj):
+    #     """
+    #     Gets all nonrelated objects needed for inlines. Method must be implemented.
+    #     """
+    #     return self.model.objects.all()
 
-    def save_new_instance(self, parent, instance):
-        """
-        Extra save method which can for example update inline instances based on current
-        main model object. Method must be implemented.
-        """
-        pass
+    # def save_new_instance(self, parent, instance):
+    #     """
+    #     Extra save method which can for example update inline instances based on current
+    #     main model object. Method must be implemented.
+    #     """
+    #     pass
 
 @admin.register(Venta)
 class VentaAdmin(ModelAdmin):

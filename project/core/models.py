@@ -47,6 +47,22 @@ class MetodoPago(models.Model):
         verbose_name = "Metodo de Pago"
         verbose_name_plural = "Metodos de Pago"
 
+class CompraVidros(models.Model):
+    precio = models.DecimalField(max_digits=10, decimal_places=2, blank=True, default=1)
+    cantidad = models.PositiveIntegerField()
+    fecha_registro = models.DateTimeField(auto_now=True)
+    fecha_compra = models.DateField(default=tz.now)
+    nota = models.TextField(blank=True, null=True)
+
+    venta = models.OneToOneField("Venta", related_name="compra_vidros", on_delete=models.SET_NULL, blank=True, null=True)
+
+    def __init__(self, *args, **kwargs):
+       super(CompraVidros, self).__init__(*args, **kwargs)
+       self._precio = 1
+
+    @property
+    def monto(self) -> models.DecimalField:
+        return self.precio * self.cantidad
 class UsoMetodoPago(models.Model):
     monto = models.DecimalField(max_digits=10, decimal_places=2)
     metodo = models.ForeignKey(MetodoPago, related_name="usos_metodo_pago", on_delete=models.CASCADE)
@@ -78,7 +94,7 @@ class Venta(models.Model):
     total = models.DecimalField(max_digits=10, decimal_places=2)
     fecha_venta = models.DateField(default=tz.now)
     fecha_registro = models.DateTimeField(auto_now=True)
-    compra_vidros = models.ForeignKey("CompraVidros", related_name="venta", on_delete=models.SET_NULL, blank=True, null=True)
+    # compra_vidros = models.ForeignKey(CompraVidros, related_name="venta", on_delete=models.SET_NULL, blank=True, null=True)
 
     objects = VentaQueryset.as_manager()
     class Meta:
@@ -100,6 +116,13 @@ class Venta(models.Model):
     @property
     def title(self):
         return mark_safe(f"Venda por R&#36; {self.total}")
+    
+    @property
+    def total_bruto(self) -> models.DecimalField:
+        total = 0
+        for item in self.items.all():
+            total += item.precio * item.cantidad
+        return total
 
 class VentaItem(models.Model):
     venta = models.ForeignKey(Venta, related_name='items', on_delete=models.CASCADE)
@@ -234,16 +257,7 @@ class ProduccionDetalle(models.Model):
     def __str__(self) -> str:
         return f'{self.cantidad} x {self.producto}'
 
-class CompraVidros(models.Model):
-    precio = models.DecimalField(max_digits=10, decimal_places=2, blank=True, default=1)
-    cantidad = models.PositiveIntegerField()
-    fecha_registro = models.DateTimeField(auto_now=True)
-    fecha_compra = models.DateField(default=tz.now)
-    nota = models.TextField(blank=True, null=True)
 
-    def __init__(self, *args, **kwargs):
-       super(CompraVidros, self).__init__(*args, **kwargs)
-       self._precio = 1 
 
 
 class Gasto(models.Model):
