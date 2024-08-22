@@ -9,4 +9,5 @@ __pycache__
 
 media
 node_modules
-staticfiles
+staticfiles/js
+!staticfiles
