@@ -26,52 +26,74 @@
                     <p class="mb-2">
                         A continução se presentan os produtos incluidos nesta venda 
                     </p>
-                    <div class="p-2 bg-gray-200 rounded">
-                        <div class="mt-2 flex font-semibold justify-between gap-1 rounded p-2 bg-gray-200">
-                            <p>Nome</p>
-                            <p>Qtd</p>
-                            <p>Valor</p>
-                            <p>Total</p>
-                        </div>
+                 
+
+                    <table class="table-auto text-left w-full bg-gray-200 rounded">
+                        <thead class="">
+                            <tr>
+                                <th class="p-2">Nome</th>
+                                <th class="p-2 text-center">Quantidade</th>
+                                <th class="p-2 text-center">Valor</th>
+                                <th class="p-2 text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
                         <template x-for="item in items">
-                            <div class="flex justify-between gap-1 rounded p-2 bg-gray-200">
-                                <span x-text="item.cantidad"></span>
-                                <span x-text="item.nombre"></span>
-                                <span x-text="item.precio"></span>
-                                <span x-text="item.total"></span>
-                            </div>
+                            <tr class="">
+                                <td class="p-2" x-text="item.nombre"></td>
+                                <td class="p-2 text-center" x-text="item.cantidad"></td>
+                                <td class="p-2 text-center" x-text="item.precio"></td>
+                                <td class="p-2 text-right" x-text="item.total"></td>
+                            </tr>
                         </template>
-                        <div class="flex font-semibold justify-between gap-1 p-2 ">
-                            <span>Total Bruto</span>
-                            <span x-text="totalBruto"></span>
-                        </div>
+                        <template x-if="vidros">
+                            <tr  class="w-full font-semibold">
+                                <td class="p-2" colspan="1">Total Bruto</td>
+                                <td class="p-2 text-right" colspan="3" x-text="totalBruto"></td>
+                            </tr>
+                        </template>
+                        </tbody>
+
+                    </table>
+                </div>
+
+                <template x-if="vidros">
+                    <div class=" rounded  bg-gray-200">
+                        <p class="font-semibold p-2">
+                            Vidros Comprados 
+                        </p>
+
+                        <table class="table-auto text-left w-full bg-gray-200 rounded">
+
+                        
+                        <thead class="font-semibold rounded py-1 bg-gray-200">
+                            <tr>
+                                <th class="p-2">Quantidade</th>
+                                <th class="p-2 text-center">Preço x Vidro</th>
+                                <th class="p-2 text-right">Desconto</th>
+                            </tr>
+
+                        </thead>
+                        <tbody class="rounded py-1">
+                            <tr>
+                                <td class="p-2" x-text="vidros.cantidad"></td>
+                                <td class="p-2 text-center" x-text="vidros.precio"></td>
+                                <td class="p-2 text-right">
+                                    <span class="bg-red-200 px-3 py-1 rounded-md" x-text="vidros.monto"></span>
+                                </td>
+                            </tr>
+                        </tbody>
+
+                        </table>
                     </div>
-                </div>
+                </template>
 
-                <div class="p-2">
-                    <template x-if="vidros">
-                        <div>
-                            Vidros Comprados <span x-text="vidros.cantidad"></span>
-
-                            <div class="flex font-semibold justify-between gap-1 rounded p-2 bg-gray-200">
-                                <p >Preço Vidro</p>
-                                <p >Desconto</p>
-                            </div>
-                            <div class="flex justify-between gap-1 rounded p-2 bg-gray-200">
-                                <p x-text="vidros.precio"></p>
-                                <p x-text="vidros.monto"></p>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-
-                <div class="p-2">
                     <div class="flex font-semibold justify-between gap-1 rounded p-2 bg-gray-200">
                         <span>Total Neto</span>
                         
                         <p x-text="totalNeto"></p>
                     </div>
-                </div>
 
                 <div>
                     <p class="mb-2">Nessa venda recebemos as seguentes formas de pagamento</p>

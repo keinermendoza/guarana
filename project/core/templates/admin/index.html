@@ -30,7 +30,9 @@
 {% block content %}
     {% include "unfold/helpers/messages.html" %}
     
-    <div hx-get={% url 'admin:vendas' %} hx-swap="outerHTML transition:true" hx-trigger="load"></div>
+    <div class="my-5">
+        <div hx-get={% url 'admin:vendas' %} hx-swap="outerHTML transition:true" hx-trigger="load"></div>
+    </div>
   
    
 {% endblock %}
