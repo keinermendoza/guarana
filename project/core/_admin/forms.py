@@ -139,6 +139,7 @@ class VentaForm(forms.ModelForm):
                 'class': 'pointer-events-none bg-gray-600	border bg-white font-medium min-w-20 rounded-md shadow-sm text-gray-500 text-sm dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300  dark:group-[.errors]:border-red-500  px-3 py-2 w-full max-w-2xl'
                 ,"tabindex":"-1"
                 , "style":"background-color:#eee"
+                , "autofocus":False
             })
          }
 
@@ -199,28 +200,7 @@ class InlineVentaItemAddForm(forms.ModelForm):
     adds Custom widget for update price when change product select 
     adds script and custom data atribute for use as selector
     """
-    class Meta:
-        model = VentaItem
-        fields = "__all__"
-        widgets = {
-            'producto':ProductoSelectWidget(attrs={
-                'data-producto':'update-price',
-                'x-on:change.debounce':'$dispatch("calculate")'
-            }),
-            'precio': forms.TextInput(attrs={
-                'class': 'pointer-events-none bg-gray-600	border bg-white font-medium min-w-20 rounded-md shadow-sm text-gray-500 text-sm dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300  dark:group-[.errors]:border-red-500  px-3 py-2 w-full max-w-2xl'
-                ,"tabindex":"-1"
-                , "style":"background-color:#eee"
-                , "data-target":"item_precio_calculate_total"
-            }),
-            'cantidad': UnfoldAdminTextInputWidget(attrs={
-                'data-target':'item_cantidad_calculate_total',
-                'x-on:input':'$dispatch("calculate")'
-            })  
-        }
-    class Media:
-        js = ["admin/js/update_price.js"]
-
+    
     def clean(self):
         """
         if there is price inserted dinamically by Javascript uses the product price
@@ -237,6 +217,28 @@ class InlineVentaItemAddForm(forms.ModelForm):
                 raise forms.ValidationError("El producto seleccionado no existe.")
         return cleaned_data
     
+    class Meta:
+        model = VentaItem
+        fields = "__all__"
+        widgets = {
+            'producto':ProductoSelectWidget(attrs={
+                'x-on:change':'$dispatch("update-price")'
+            }),
+            'precio': forms.TextInput(attrs={
+                'class': 'pointer-events-none bg-gray-600	border bg-white font-medium min-w-20 rounded-md shadow-sm text-gray-500 text-sm dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300  dark:group-[.errors]:border-red-500  px-3 py-2 w-full max-w-2xl'
+                ,"tabindex":"-1"
+                , "style":"background-color:#eee"
+                , "data-target":"item_precio_calculate_total"
+            }),
+            'cantidad': UnfoldAdminTextInputWidget(attrs={
+                'data-target':'item_cantidad_calculate_total',
+                'x-on:input':'$dispatch("calculate")'
+            })  
+        }
+    class Media:
+        js = ["admin/js/update_price.js"]
+
+
 class InlineUsoMetodoPagoFormset(BaseInlineFormSet):
     def clean(self):
         """

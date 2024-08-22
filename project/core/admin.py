@@ -84,11 +84,11 @@ class UsoMetodoPagoAdmin(ModelAdmin):
         result = result.quantize(Decimal(f'1.{"0" * decimals}'), rounding=ROUND_CEILING)
         return result
     
-    @admin.action(description="Marcar pago como declarado")
+    @admin.action(description="Marcar pagamento como declarado")
     def declarar_pago(modeladmin, request, queryset):
         queryset.update(declarado=True)
 
-    @admin.action(description="Marcar pago como NO declarado")
+    @admin.action(description="Marcar pagamento como NÃO declarado")
     def retirar_declaracion(modeladmin, request, queryset):
         queryset.update(declarado=False)
 
@@ -145,6 +145,7 @@ class TipoGuaranaAdmin(ModelAdmin):
 
 @admin.register(MetodoPago)
 class MetodoPagoAdmin(ModelAdmin):
+    search_fields = ["nombre"]
     pass
 
 @admin.register(Saco)
@@ -178,7 +179,7 @@ class SacoAdmin(ModelAdmin):
 @admin.register(Producto)
 class ProductoAdmin(ModelAdmin):
     search_fields = ["nombre"]
-    list_display = ["__str__", "precio"]
+    list_display = ["nombre", "peso", "precio", "tipo_guarana"]
 
 class RaladaInline(StackedInline):
     model = Ralada
@@ -241,6 +242,7 @@ class VentaItemInline(TabularInline):
 
 class UsoMetodoPagoInline(TabularInline):
     model = UsoMetodoPago
+    autocomplete_fields = ["metodo"]
     extra = 1
     form = InlineUsoMetodoPagoForm
     formset= InlineUsoMetodoPagoFormset

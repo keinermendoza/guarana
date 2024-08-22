@@ -165,7 +165,10 @@ class ProductoQueryset(models.QuerySet):
                 ),
                 models.Value(0)
             )
-        ).order_by('-total_producido', 'nombre')
+        ).order_by('tipo_guarana', '-peso', 'nombre')
+
+        producto_mas_vendido =  max(queryset,  key=lambda p: p['total_producido'])
+        cantidad_maxima = producto_mas_vendido["total_producido"] + 1
 
         cantidad_maxima = queryset[0]["total_producido"] + 1
         productos = []
@@ -177,7 +180,7 @@ class ProductoQueryset(models.QuerySet):
                 "description":f"{item['total_producido']} produtos produzidos",
                 "value":value
             })
-        return sorted(productos, key=lambda x: x['title'])
+        return productos
 
 
     def cantidad_vendida_progress_chart(
@@ -202,9 +205,10 @@ class ProductoQueryset(models.QuerySet):
                 ),
                 models.Value(0)
             ),
-        ).order_by('-cantidad_vendida', 'nombre')
+        ).order_by('tipo_guarana', '-peso', 'nombre')
 
-        cantidad_maxima = queryset[0]["cantidad_vendida"] + 1
+        producto_mas_vendido =  max(queryset,  key=lambda p: p['cantidad_vendida'])
+        cantidad_maxima = producto_mas_vendido["cantidad_vendida"] + 1
         productos = []
         for item in queryset:
             value = int(item["cantidad_vendida"] / cantidad_maxima * 100) 
@@ -214,8 +218,7 @@ class ProductoQueryset(models.QuerySet):
                 "description":f"{item['cantidad_vendida']} produtos vendidos",
                 "value":value
             })
-        return sorted(productos, key=lambda x: x['title'])
-
+        return productos
 class RaladaQueryset(models.QuerySet):
     def peso_y_cantidades_procesadas_kpi(
         self, 

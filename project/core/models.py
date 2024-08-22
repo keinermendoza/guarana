@@ -88,7 +88,14 @@ class Producto(models.Model):
     
     def __str__(self) -> str:
         return self.nombre
-
+    
+    class Meta:
+        verbose_name = 'ModelName'
+        verbose_name_plural = 'ModelNames'
+        ordering = ["tipo_guarana", "-peso", "nombre"]
+        indexes = [
+            models.Index(fields=["tipo_guarana", "-peso", "nombre"])
+        ]
 class Venta(models.Model):
     nota = models.TextField(blank=True, null=True)
     total = models.DecimalField(max_digits=10, decimal_places=2)
