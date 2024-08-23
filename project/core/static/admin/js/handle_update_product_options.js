@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const productSelect = document.querySelector('[data-trigger="handle_update_product_options"]')
     const sacoId = productSelect.options[productSelect.selectedIndex].value;
+    
     if (!sacoId) {
         handleUpdate(sacoId)
     }
@@ -16,12 +17,11 @@ document.addEventListener('update_product_inline_options', (e) => {
 // if there is not id or is not valid populates product select with empty option
 // if success populates select with "tipo_guarana" related "products"  
 async function handleUpdate(sacoId) {
-    const produccionProductosSelects = document.querySelectorAll('table [data-model-ref="producto"] select')
+    const produccionProductosSelects = document.querySelectorAll('[data-target="recive_update_product_options"]')
     if (sacoId === "") {
         populateSelect(produccionProductosSelects)
     } else {
         const options = await updateProductInlineOptions(sacoId)
-
         if (options) {
             populateSelect(produccionProductosSelects, options)
         } else {
