@@ -219,6 +219,9 @@ UNFOLD = {
     "STYLES": [
         lambda request: static("css/tailwind.css"),
     ],
+    "SCRIPTS": [
+        lambda request: static("admin/js/prevent_duplicate_submition.js")
+    ],
     "SITE_HEADER": _("Loja de Guaraná Admin"),
     "SITE_TITLE": _("Loja de Guaraná"),
     "SITE_SYMBOL": "settings",

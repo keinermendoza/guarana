@@ -145,7 +145,7 @@ class TipoGuaranaAdmin(ModelAdmin):
 
 @admin.register(MetodoPago)
 class MetodoPagoAdmin(ModelAdmin):
-    search_fields = ["nombre"]
+    # search_fields = ["nombre"]
     pass
 
 @admin.register(Saco)
@@ -242,7 +242,7 @@ class VentaItemInline(TabularInline):
 
 class UsoMetodoPagoInline(TabularInline):
     model = UsoMetodoPago
-    autocomplete_fields = ["metodo"]
+    # autocomplete_fields = ["metodo"]
     extra = 1
     form = InlineUsoMetodoPagoForm
     formset= InlineUsoMetodoPagoFormset
@@ -253,25 +253,10 @@ class UsoMetodoPagoInline(TabularInline):
         metodo.widget.can_add_related = metodo.widget.can_change_related = metodo.widget.can_delete_related = metodo.widget.can_view_related = False
         return formset
 
-# class CompraVidrosInline(NonrelatedTabularInline):
 class CompraVidrosInline(TabularInline):
-
     form = InlineCompraVidrosForm
     model = CompraVidros
     extra = 1
-
-    # def get_form_queryset(self, obj):
-    #     """
-    #     Gets all nonrelated objects needed for inlines. Method must be implemented.
-    #     """
-    #     return self.model.objects.all()
-
-    # def save_new_instance(self, parent, instance):
-    #     """
-    #     Extra save method which can for example update inline instances based on current
-    #     main model object. Method must be implemented.
-    #     """
-    #     pass
 
 @admin.register(Venta)
 class VentaAdmin(ModelAdmin):
@@ -317,10 +302,4 @@ class VentaAdmin(ModelAdmin):
         return RequestForm
         
        
-                            # inline_cleaned_data.
-
-
-                # if not inlinie_instance.something: 
-                    # raise ValidationError("something is wrong")
         
-      

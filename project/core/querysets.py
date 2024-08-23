@@ -66,7 +66,7 @@ class VentaQueryset(models.QuerySet):
         ventas_por_metodo = defaultdict(lambda: {'C': 0, 'D': 0, 'P': 0})
 
         for venta in queryset:
-            fecha = venta['fecha_venta'].strftime('%d/%m')
+            fecha = venta['fecha_venta']#.strftime('%d/%m')
             fechas_set.add(fecha)
 
             metodo_pago = venta['metodo'] # C || D || P
@@ -80,7 +80,7 @@ class VentaQueryset(models.QuerySet):
 
         # formating data for bar chart
         datasets = []
-        background_colors = ["#f0abfc", "#9333ea", "#f43f5e"]
+        background_colors = ["#f0abfc", "#9333ea", "#fb923c", "#b45309"]
         for i, metodo in enumerate([carton, efectivo, pix]):
             index = i % len(background_colors)
 
@@ -91,8 +91,8 @@ class VentaQueryset(models.QuerySet):
                 "barThickness": 5,
                 "backgroundColor":background_colors[index],
             })
-
-        datasets.append(fechas_set) # this must be pop in the view
+        dates = list(map(lambda d: d.strftime('%d/%m'), fechas_ordenadas))
+        datasets.append(dates) # this must be pop in the view
         return datasets
 
 class VentaItemQueryset(models.QuerySet):
@@ -123,7 +123,7 @@ class VentaItemQueryset(models.QuerySet):
         
         datasets = []
 
-        background_colors = ["#f0abfc", "#9333ea", "#f43f5e"]
+        background_colors = ["#f0abfc", "#9333ea", "#fb923c", "#b45309", "#be123c", "#ec4899", "#1d4ed8" ,"#0ea5e9", "#16a34a", "#fde047", "#444444", "#34d399"]
         for i, producto in enumerate(queryset):
             index = i % len(background_colors)
             
@@ -135,7 +135,6 @@ class VentaItemQueryset(models.QuerySet):
                 "backgroundColor":background_colors[index],
             })
         return datasets
-        
 
 class ProductoQueryset(models.QuerySet):
     def produccion_al_mes_progress_chart(
