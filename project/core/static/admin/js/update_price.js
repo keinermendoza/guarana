@@ -6,10 +6,10 @@ document.addEventListener('update-price', (e) => {
         const precio = selectedOption.dataset.precio
         precioInput.value = precio || 0
 
+        rowElement.querySelector('[data-label="Cantidad"] input').focus()
         const calculate = new Event('calculate')
         document.dispatchEvent(calculate)
 
-        rowElement.querySelector('[data-label="Cantidad"] input').focus()
 
 
         

@@ -266,11 +266,11 @@ class VentaAdmin(ModelAdmin):
     fieldsets = (
         ("Venta", {
             "classes": ["tab"],
-            'fields': ['total']
+            'fields': ['total', 'fecha_venta']
         }),
         ('Extras', {
             "classes": ["tab"],
-            'fields': ['fecha_venta', 'nota'],
+            'fields': ['nota'],
         }),
     )
 
