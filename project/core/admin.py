@@ -269,7 +269,9 @@ class CompraVidrosInline(TabularInline):
 @admin.register(Venta)
 class VentaAdmin(ModelAdmin):
     form = VentaForm
-    list_display = ["__str__", "metodos_de_pago"]
+    list_display = ["__str__", "metodos_de_pago", "detalle_venta"]
+    list_filter =["usos_metodo_pago__metodo__tipo"]
+    ordering = ["fecha_venta", "pk"]
     inlines = [VentaItemInline, UsoMetodoPagoInline, CompraVidrosInline]
     fieldsets = (
         ("Venta", {
@@ -282,15 +284,18 @@ class VentaAdmin(ModelAdmin):
         }),
     )
 
-    @display(description="metodos")
+    @display(description="detalhe da venda")
+    def detalle_venta(self, obj) -> str:
+        items = obj.items.all()
+        items_list = [f"{item.cantidad} de {item.precio}" for item in items]
+        venta_nota = obj.nota if obj.nota else ""
+        return ", ".join(items_list) + venta_nota
+
+    @display(description="monto pago por forma de pagamento")
     def metodos_de_pago(self, obj):
         usos_metodos = obj.usos_metodo_pago.all()
-        metodos_str = ""
-        if usos_metodos:
-            for uso_metodo in usos_metodos:
-                metodos_str += f"{uso_metodo.metodo.get_tipo_display()} R$ {uso_metodo.monto} | "
-            metodos_str = metodos_str.strip()
-        return metodos_str
+        usos_metodos_list = [f"{uso_metodo.metodo.nombre} x R$ {uso_metodo.monto}" for uso_metodo in usos_metodos]
+        return ", ".join(usos_metodos_list)
     
     def get_form(self, request, obj=None, change=False, **kwargs):
 
