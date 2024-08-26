@@ -66,17 +66,25 @@ class CompraVidrosAdmin(ModelAdmin):
 
 @admin.register(UsoMetodoPago)
 class UsoMetodoPagoAdmin(ModelAdmin):
-    list_display = ["monto", "fecha_venta", "metodo", "calculo", "declarado"]
+    list_display = ["fecha_venta", "monto", "metodo", "detalle_compra", "calculo", "declarado"]
     list_display_links = None
     actions = ["declarar_pago", "retirar_declaracion"]
-    list_filter = ["metodo"]
-
+    list_filter = ["metodo__tipo"]
+    ordering = ["venta__fecha_venta"]
+    
     @display(description="data")
     def fecha_venta(self, obj):
         if obj.venta.fecha_venta:
             return obj.venta.fecha_corta
         return ""
-
+    
+    @display(description="detalhe")
+    def detalle_compra(self, obj) -> str:
+        items = obj.venta.items.all()
+        items_list = [f"{item.cantidad} de {item.precio}" for item in items]
+        venta_nota = obj.venta.nota if obj.venta.nota else ""
+        return ", ".join(items_list) + venta_nota
+    
     @display(description="Calculo")
     def calculo(self, obj):
         decimals = 3
