@@ -70,8 +70,8 @@ class UsoMetodoPagoAdmin(ModelAdmin):
     list_display_links = None
     actions = ["declarar_pago", "retirar_declaracion"]
     list_filter = ["metodo__tipo"]
-    ordering = ["venta__fecha_venta"]
-    
+    ordering = ["venta__fecha_venta", "venta__pk"]
+
     @display(description="data")
     def fecha_venta(self, obj):
         if obj.venta.fecha_venta:
