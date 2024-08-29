@@ -210,13 +210,17 @@ class ProduccionAdmin(ModelAdmin):
     inlines = [RaladaInline, ProduccionDetalleInline]
 
     readonly_fields = ['fecha_registro']
-    list_display = ['__str__', 'consumo', "numero_ralada" ,'fecha_registro']
+    list_display = ['__str__', 'consumo', "numero_ralada" , "fecha_ralada"]
     search_fields = ['nota']
 
 
     @display(description="N° Ralada", label=True)
     def numero_ralada(self, obj):
         return f"{obj.ralada.numero}"
+    
+    @display(description="Fecha Ralada")
+    def fecha_ralada(self, obj):
+        return f"{obj.ralada.fecha_ralada}"
     
     def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
         """
