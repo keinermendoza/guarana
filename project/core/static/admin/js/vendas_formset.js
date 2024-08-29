@@ -7,12 +7,20 @@ const COPY_SVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0
   </svg>`
 
 document.addEventListener("DOMContentLoaded", () => {
-    const copyTotalButton = helperCreateButton(COPY_SVG)
-    helperAddCopyButtonToPage(copyTotalButton)
-
     const calculateTotalButton = helperCreateButton(CALCULATOR_SVG)
-    helperAddCalculateButtonToPage(calculateTotalButton)
+    helperAddCalculateButton(calculateTotalButton)
+    
+    const copyTotalButton = helperCreateButton(COPY_SVG)
+    helperAddAllowEditPriceButton(copyTotalButton)
 
+
+})
+
+// copy the total for first metodo monto 
+document.addEventListener('reload_copy', () => {
+    const total_input = document.getElementById("id_total");
+    const input = container.querySelector('input')
+    input.value = total_input.value
 })
      
 
@@ -25,7 +33,7 @@ const helperCreateButton = (svg) => {
     return button
 }
 
-const helperAddCalculateButtonToPage = (button) => {
+const helperAddCalculateButton = (button) => {
     const total_input = document.getElementById("id_total");
     createContainerAndReorderItems(total_input.parentElement, button)
 
@@ -53,28 +61,23 @@ const helperAddCalculateButtonToPage = (button) => {
 
     document.addEventListener('calculate', calculate)
     button.addEventListener('click', calculate)
-    
 }
 
-const helperAddCopyButtonToPage = (button) => {
-    const total_input = document.getElementById("id_total");
-    const container = document.querySelector('[data-label="Monto"]')
-    const input = container.querySelector('input')
-    
-    createContainerAndReorderItems(container, button)
-
+const helperAddAllowEditPriceButton = (button) => {
+    const container = document.querySelector('.main-form__total-price')
     button.addEventListener("click", () => {
-        input.value = total_input.value
+        document.querySelectorAll('[data-target="item_precio_calculate_total"]').forEach((inputPrice) => {
+            inputPrice.classList.toggle('pointer-events-none')
+        })
+        button.classList.toggle('bg-primary-600')
     })
-
-    document.addEventListener('reload_copy', () => {
-        input.value = total_input.value
-    })
+    console.log(container)
+    container.appendChild(button)
 }
 
 const createContainerAndReorderItems = (acutalContainer, button) => {
     const newContainer = document.createElement('div')
-    newContainer.className = "flex gap-1 w-full"
+    newContainer.className = "main-form__total-price flex gap-1 w-full"
     const input = acutalContainer.querySelector('input')
     acutalContainer.insertBefore(newContainer, acutalContainer.children[0]);
     newContainer.appendChild(input)
