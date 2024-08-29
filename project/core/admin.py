@@ -83,7 +83,7 @@ class UsoMetodoPagoAdmin(ModelAdmin):
         items = obj.venta.items.all()
         items_list = [f"{item.cantidad} de {item.precio}" for item in items]
         venta_nota = obj.venta.nota if obj.venta.nota else ""
-        return ", ".join(items_list) + venta_nota
+        return ", ".join(items_list) + " " + venta_nota
     
     @display(description="Calculo")
     def calculo(self, obj):
@@ -289,7 +289,7 @@ class VentaAdmin(ModelAdmin):
         items = obj.items.all()
         items_list = [f"{item.cantidad} de {item.precio}" for item in items]
         venta_nota = obj.nota if obj.nota else ""
-        return ", ".join(items_list) + venta_nota
+        return ", ".join(items_list) + " " + venta_nota
 
     @display(description="monto pago por forma de pagamento")
     def metodos_de_pago(self, obj):
