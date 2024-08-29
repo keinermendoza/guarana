@@ -18,6 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // copy the total for first metodo monto 
 document.addEventListener('reload_copy', () => {
+    const container = document.querySelector('[data-label="Monto"]')
     const total_input = document.getElementById("id_total");
     const input = container.querySelector('input')
     input.value = total_input.value
