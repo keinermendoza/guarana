@@ -1,3 +1,4 @@
+import calendar
 from typing import Iterable
 from collections import defaultdict
 from decimal import Decimal
@@ -9,14 +10,17 @@ from django.utils import timezone as tz
 class VentaQueryset(models.QuerySet):  
     def kpi_totales_por_metodo(
         self,
-        year: int = tz.now().year,
-        month: int = tz.now().month
+        start: models.DateField,
+        end: models.DateField,
+        # year: int = tz.now().year,
+        # month: int = tz.now().month,
     ) -> dict[str, Decimal]:
         """
         devuelve los totales mensuales para cada metodo de pago
         en formato para KPI
         """
-        queryset = self.filter(fecha_venta__year=year, fecha_venta__month=month)\
+        # queryset = self.filter(fecha_venta__year=year, fecha_venta__month=month)\
+        queryset = self.filter(fecha_venta__range=[start, end])\
             .annotate(metodo=models.F('usos_metodo_pago__metodo__tipo'))\
             .values('metodo')\
             .annotate(total_ventas=models.Sum('usos_metodo_pago__monto', output_field=models.DecimalField()))\
@@ -39,15 +43,21 @@ class VentaQueryset(models.QuerySet):
     
     def grafico_bar_metodos_de_pago_diario(
         self,
-        year: int = tz.now().year,
-        month: int = tz.now().month 
+        start: models.DateField,
+        end: models.DateField,
+        # year: int = tz.now().year,
+        # month: int = tz.now().month,
+
     ):
         """
         totales diarios por metodo de pago
         con el formato apropiado para usar
         GRAFICO DE BARRAS en chartjs
         """
-        queryset = self.filter(fecha_venta__year=year, fecha_venta__month=month)\
+
+        
+        # queryset = self.filter(fecha_venta__year=year, fecha_venta__month=month)\
+        queryset = self.filter(fecha_venta__range=[start, end])\
             .annotate(metodo=models.F('usos_metodo_pago__metodo__tipo'))\
             .values('fecha_venta', 'metodo')\
             .annotate(total_ventas=models.Sum('usos_metodo_pago__monto', output_field=models.FloatField()))\
@@ -98,8 +108,11 @@ class VentaQueryset(models.QuerySet):
 class VentaItemQueryset(models.QuerySet):
     def grafico_bar_montos_productos_vendidos_mensual(
         self,
-        year: int = tz.now().year,
-        month: int = tz.now().month 
+        start: models.DateField,
+        end: models.DateField,
+        # year: int = tz.now().year,
+        # month: int = tz.now().month,
+
     ):
         """
         total mensual vendido por producto
@@ -108,8 +121,7 @@ class VentaItemQueryset(models.QuerySet):
         """
 
         queryset = self.filter(
-            venta__fecha_venta__year=year,
-            venta__fecha_venta__month=month
+            venta__fecha_venta__range=[start, end]
         ).annotate(
             nombre=models.F('producto__nombre'),
             monto=models.ExpressionWrapper(
@@ -184,8 +196,10 @@ class ProductoQueryset(models.QuerySet):
 
     def cantidad_vendida_progress_chart(
         self,
-        year: int =tz.now().year,
-        month: int =tz.now().month,   
+        start: models.DateField,
+        end: models.DateField,
+        # year: int = tz.now().year,
+        # month: int = tz.now().month,
     ):
         """
         cantidades vendidas al mes por producto
@@ -198,8 +212,7 @@ class ProductoQueryset(models.QuerySet):
                 models.Sum(
                     'venta_items__cantidad', 
                     filter=models.Q(
-                        venta_items__venta__fecha_venta__year=year, 
-                        venta_items__venta__fecha_venta__month=month
+                        venta_items__venta__fecha_venta__range=[start, end] 
                     )
                 ),
                 models.Value(0)

@@ -1,7 +1,8 @@
 import json
+import datetime
 from django.urls import reverse_lazy
 from django.shortcuts import render
-
+from django.http import HttpRequest
 from django.utils import timezone as tz
 from django.utils.translation import gettext_lazy as _
 from django_htmx.http import trigger_client_event
@@ -11,7 +12,8 @@ from core.models import (
     Producto,
     VentaItem,
     Produccion,
-    Ralada
+    Ralada,
+    Periodo
 )
 
 def get_home_navegation(request):
@@ -19,6 +21,24 @@ def get_home_navegation(request):
         {"title": _("Vendas"), "link": reverse_lazy('admin:vendas'), "active":reverse_lazy('admin:vendas') == request.path_info},
         {"title": _("Produção"), "link": reverse_lazy('admin:producao'), "active":reverse_lazy('admin:producao') == request.path_info},
     ]
+
+def get_current_periodo_rango(request: HttpRequest) -> tuple[datetime.date, datetime.date]: 
+    """
+    Retrieves the date range for a period based on the 'periodo_inicio' query parameter.
+
+    If 'periodo_inicio' is provided, it finds the corresponding 'Periodo' and returns its date range. 
+    If not, it returns the date range of the most recent 'Periodo'.
+    """
+    if periodo_inicio := request.GET.get("periodo_inicio"):
+        try:
+            periodo = Periodo.objects.get(inicio=periodo_inicio)
+            return periodo.rango_fechas()
+        except Periodo.DoesNotExist:
+            pass
+
+    periodo = Periodo.objects.last()
+    return periodo.rango_fechas()
+            
 
 def vendas(request, *args, **kwargs):
     """
@@ -28,15 +48,18 @@ def vendas(request, *args, **kwargs):
     table_template = "admin/components/table_ventas.html"
     year = tz.now().year
     month = tz.now().month
-
-    ventas = Venta.objects.all()
+    
+    # this is like pagination
+    periodos = Periodo.objects.all() 
+    start, end = get_current_periodo_rango(request=request)
+    ventas = Venta.objects.filter(fecha_venta__range=[start, end])
     
     # data para graficos
-    ventas_diaria_metodos = Venta.objects.grafico_bar_metodos_de_pago_diario(year=year, month=month)
+    ventas_diaria_metodos = Venta.objects.grafico_bar_metodos_de_pago_diario(start=start, end=end)
     fechas_venta_diaria = ventas_diaria_metodos.pop()
-    kpi = Venta.objects.kpi_totales_por_metodo(year=year, month=month)
-    producto_vendido = Producto.objects.cantidad_vendida_progress_chart(year=year, month=month)
-    venta_mensual_productos = VentaItem.objects.grafico_bar_montos_productos_vendidos_mensual(year=year, month=month)
+    kpi = Venta.objects.kpi_totales_por_metodo(start=start, end=end)
+    producto_vendido = Producto.objects.cantidad_vendida_progress_chart(start=start, end=end)
+    venta_mensual_productos = VentaItem.objects.grafico_bar_montos_productos_vendidos_mensual(start=start, end=end)
     
     navegation = get_home_navegation(request)
     
@@ -45,6 +68,8 @@ def vendas(request, *args, **kwargs):
 
     context.update(
         {
+            "periodos":periodos,
+            "current_periodo":start.strftime("%Y-%m-%d"),
             "table_template": table_template,
             "table_context":ventas,
             "navigation": navegation,

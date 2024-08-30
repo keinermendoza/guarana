@@ -265,6 +265,12 @@ UNFOLD = {
                 "collapsible": True,  # Collapsible group of links
                 "items": [
                     {
+                        "title": "Periodo",
+                        "icon": "calendar_month",  # Supported icon set: https://fonts.google.com/icons
+                        "link": reverse_lazy("admin:core_periodo_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                    {
                         "title": "Tipos de Guaraná",
                         "icon": "splitscreen_left",  # Supported icon set: https://fonts.google.com/icons
                         "link": reverse_lazy("admin:core_tipoguarana_changelist"),
@@ -314,7 +320,7 @@ UNFOLD = {
                         "link": reverse_lazy("admin:core_usometodopago_changelist"),
                         "permission": lambda request: request.user.is_superuser,
                     },
-                   
+
                     {
                         "title": "Compra de Vidros",
                         "icon": "local_mall",  # Supported icon set: https://fonts.google.com/icons
