@@ -114,8 +114,8 @@ class Producto(models.Model):
     class Meta:
         verbose_name = "ModelName"
         verbose_name_plural = "ModelNames"
-        ordering = ["tipo_guarana", "-peso", "nombre"]
-        indexes = [models.Index(fields=["tipo_guarana", "-peso", "nombre"])]
+        ordering = ["precio", "tipo_guarana", "-peso", "nombre"]
+        indexes = [models.Index(fields=["precio", "tipo_guarana", "-peso", "nombre"])]
 
 
 class Venta(models.Model):
