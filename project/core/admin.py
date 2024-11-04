@@ -76,7 +76,7 @@ class UsoMetodoPagoAdmin(ModelAdmin):
     ]
     list_display_links = None
     actions = ["declarar_pago", "retirar_declaracion"]
-    list_filter = ["metodo__tipo"]
+    list_filter = ["venta__fecha_venta", "metodo__tipo"]
     ordering = ["venta__fecha_venta", "venta__pk"]
 
     @display(description="data")
@@ -302,7 +302,7 @@ class CompraVidrosInline(TabularInline):
 class VentaAdmin(ModelAdmin):
     form = VentaForm
     list_display = ["__str__", "metodos_de_pago", "detalle_venta"]
-    list_filter = ["usos_metodo_pago__metodo__tipo"]
+    list_filter = ["fecha_venta", "usos_metodo_pago__metodo__tipo"]
     ordering = ["fecha_venta", "pk"]
     inlines = [VentaItemInline, UsoMetodoPagoInline, CompraVidrosInline]
     fieldsets = (
