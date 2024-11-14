@@ -17,7 +17,7 @@ module.exports = {
     entry: {
         vendor: './src/vendor.js',
         admin: './src/admin.js',
-        // expression_list: './src/expression_list.js',
+        reactAdmin: './src/reactAdmin.js',
         // blog: './src/blog.js',
         // editor_react: './src/react/editor_app.jsx',
     },
@@ -56,7 +56,8 @@ module.exports = {
         })
       ],
     resolve: {
-        extensions: ['.js', '.jsx']
+        extensions: ['.js', '.jsx'],
+        modules: ['reactAdmin', 'node_modules']
     },
     devServer: {
         contentBase: path.join(__dirname, 'dist'),
