@@ -1,0 +1,38 @@
+{% extends 'unfold/layouts/base_simple.html' %}
+
+{% load i18n custom_unfold static %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block title %}
+    {% trans 'Dashboard' %} | {{ site_title|default:_('Django site admin') }}
+{% endblock %}
+
+{% block branding %}
+    <h1 id="site-name">
+        <a href="{% url 'admin:index' %}">
+            {{ site_header }}
+        </a>
+    </h1>
+{% endblock %}
+
+{% block extrahead %}
+<script src="{% static 'admin/js/reload_charts.js' %}"></script>
+<script src="{% static 'admin/js/alpine_focus_plugin.min.js' %}"></script>
+
+<link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+
+    {% if plausible_domain %}
+        <script defer data-domain="{{ plausible_domain }}" src="https://plausible.io/js/script.js"></script>
+    {% endif %}    
+{% endblock %}
+
+{% block content %}
+    {% include "unfold/helpers/messages.html" %}
+    
+    <div class="my-5">
+        <div hx-get={% url 'admin:vendas' %} hx-swap="outerHTML transition:true" hx-trigger="load"></div>
+    </div>
+  
+   
+{% endblock %}

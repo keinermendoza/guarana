@@ -1,0 +1,185 @@
+{% load unfold %}
+
+<div 
+    x-data="{title:'', totalNeto:'',totalBruto:'', items:[], fecha:'', metodos: [], vidros:false, modalIsOpen:false}"
+    class="{% if card_included == 1 %}-m-6{% else %}lg:border lg:rounded-md lg:shadow-sm{% endif %} overflow-x-auto lg:dark:border-gray-800">
+   
+    <div x-cloak x-show="modalIsOpen" x-transition.opacity.duration.200ms x-trap.inert.noscroll="modalIsOpen" @keydown.esc.window="modalIsOpen = false" @click.self="modalIsOpen = false" class="fixed inset-0 z-30 flex items-end justify-center bg-black/20 p-4 pb-8 backdrop-blur-md sm:items-center lg:p-8" role="dialog" aria-modal="true" aria-labelledby="defaultModalTitle">
+        <!-- Modal Dialog -->
+        <div x-show="modalIsOpen" x-transition:enter="transition ease-out duration-200 delay-100 motion-reduce:transition-opacity" x-transition:enter-start="opacity-0 scale-50" x-transition:enter-end="opacity-100 scale-100" 
+        class="flex max-w-lg flex-col gap-4 overflow-hidden rounded border border-zinc-300 bg-zinc-50 text-neutral-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+            <!-- Dialog Header -->
+            <div class="flex items-center justify-between border-b border-zinc-300 bg-zinc-100/60 p-4 dark:border-zinc-700 dark:bg-zinc-900/20">
+                <h3 id="defaultModalTitle" class="font-semibold tracking-wide text-center text-neutral-900 dark:text-zinc-50" >
+                    <span x-text="title"></span>
+                </h3>
+                <button @click="modalIsOpen = false" aria-label="close modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" stroke="currentColor" fill="none" stroke-width="1.4" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <!-- Dialog Body -->
+            <div class="p-4 flex flex-col gap-4">
+                <p>Venda Realizada no dia <span class="font-semibold" x-text="fecha"></span></p> 
+                <div>
+                    <p class="mb-2">
+                        A continução se presentan os produtos incluidos nesta venda 
+                    </p>
+                 
+
+                    <table class="table-auto text-left w-full bg-gray-200 rounded">
+                        <thead class="">
+                            <tr>
+                                <th class="p-2">Nome</th>
+                                <th class="p-2 text-center">Quantidade</th>
+                                <th class="p-2 text-center">Valor</th>
+                                <th class="p-2 text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                        <template x-for="item in items">
+                            <tr class="">
+                                <td class="p-2" x-text="item.nombre"></td>
+                                <td class="p-2 text-center" x-text="item.cantidad"></td>
+                                <td class="p-2 text-center" x-text="item.precio"></td>
+                                <td class="p-2 text-right" x-text="item.total"></td>
+                            </tr>
+                        </template>
+                        <template x-if="vidros">
+                            <tr  class="w-full font-semibold">
+                                <td class="p-2" colspan="1">Total Bruto</td>
+                                <td class="p-2 text-right" colspan="3" x-text="totalBruto"></td>
+                            </tr>
+                        </template>
+                        </tbody>
+
+                    </table>
+                </div>
+
+                <template x-if="vidros">
+                    <div class=" rounded  bg-gray-200">
+                        <p class="font-semibold p-2">
+                            Vidros Comprados 
+                        </p>
+
+                        <table class="table-auto text-left w-full bg-gray-200 rounded">
+
+                        
+                        <thead class="font-semibold rounded py-1 bg-gray-200">
+                            <tr>
+                                <th class="p-2">Quantidade</th>
+                                <th class="p-2 text-center">Preço x Vidro</th>
+                                <th class="p-2 text-right">Desconto</th>
+                            </tr>
+
+                        </thead>
+                        <tbody class="rounded py-1">
+                            <tr>
+                                <td class="p-2" x-text="vidros.cantidad"></td>
+                                <td class="p-2 text-center" x-text="vidros.precio"></td>
+                                <td class="p-2 text-right">
+                                    <span class="bg-red-200 px-3 py-1 rounded-md" x-text="vidros.monto"></span>
+                                </td>
+                            </tr>
+                        </tbody>
+
+                        </table>
+                    </div>
+                </template>
+
+                    <div class="flex font-semibold justify-between gap-1 rounded p-2 bg-gray-200">
+                        <span>Total Neto</span>
+                        
+                        <p x-text="totalNeto"></p>
+                    </div>
+
+                <div>
+                    <p class="mb-2">Nessa venda recebemos as seguentes formas de pagamento</p>
+                   
+                    <template x-for="metodo in metodos">
+                        <div class="flex justify-between gap-1 rounded p-2 bg-gray-200">
+                            <p x-text="metodo.nombre"></p>
+                            <p x-text="metodo.declarado"></p>
+                            <p x-text="metodo.monto"></p>
+                        </div>
+                    </template>
+
+                </div>
+
+                
+            </div>
+            
+        </div>
+    </div>
+   
+    <table class="block border-gray-200 border-spacing-none border-separate w-full lg:table"
+        
+    >
+        
+            <thead class="text-gray-900 dark:text-gray-100">
+                <tr class="bg-gray-50 dark:bg-white/[.02]">
+                    <th class="align-middle font-semibold py-2 text-left text-sm whitespace-nowrap sortable column-description hidden px-3 lg:table-cell {% if card_included == 1 %}first:pl-6 last:pr-6{% endif %}">
+                        Ventas
+                    </th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody class="block lg:table-row-group">
+                {% for venta in table_context %}
+                    <tr 
+                    x-data="{ventaItems:[
+                                {% for item in venta.items.all %}
+                                    {
+                                        'nombre': '{{item.producto.nombre}}',
+                                        'precio':'{{item.precio}}',
+                                        'cantidad':'{{item.cantidad}}',
+                                        'total':'{{item.total}}',
+                                    },
+                                {% endfor %}
+                                ],
+                            metodosPago: [
+                                {% for uso_metodo in venta.usos_metodo_pago.all %}
+                                    {
+                                        'nombre': '{{uso_metodo.metodo.nombre}}',
+                                        'monto': '{{uso_metodo.monto}}',
+                                        'declarado': '{{uso_metodo.metodo.declarado}}'
+                                    },
+                                {% endfor %}
+                                ],
+                                compraVidros:{% if venta.compra_vidros %} 
+                                {
+                                    'precio':'{{venta.compra_vidros.precio}}',
+                                    'cantidad':'{{venta.compra_vidros.cantidad}}',
+                                    'monto':'{{venta.compra_vidros.monto}}',
+
+                                }{% else %}false{% endif %}
+                            }"
+                    class="{% if striped == 1 %}{% cycle '' 'bg-gray-50 dark:bg-white/[.02]' %}{% endif %} block {% if not card_included == 1 %}border mb-3 rounded-md shadow-sm{% else %}border-t{% endif %} lg:table-row lg:border-none lg:mb-0 lg:shadow-none dark:border-gray-800">
+                            <td class="px-3 py-2 align-middle flex border-t border-gray-200 font-normal gap-4 min-w-0 overflow-hidden text-left before:flex before:capitalize before:content-[attr(data-label)] before:items-center before:mr-auto first:border-t-0 lg:before:hidden lg:first:border-t lg:py-3 lg:table-cell dark:border-gray-800 {% if card_included == 1 %}lg:first:pl-6 lg:last:pr-6{% endif %}" 
+                            data-label="Ventas">
+                                {{venta}}
+                            </td>
+                            <td class="px-3 py-2 align-middle flex border-t border-gray-200 font-normal gap-4 min-w-0 overflow-hidden text-left before:flex before:capitalize before:content-[attr(data-label)] before:items-center before:mr-auto first:border-t-0 lg:before:hidden lg:first:border-t lg:py-3 lg:table-cell dark:border-gray-800 {% if card_included == 1 %}lg:first:pl-6 lg:last:pr-6{% endif %}" 
+                            data-label="Detalhes"
+                            >
+                                <div class="ml-auto w-fit" >
+                                    <button @click="modalIsOpen = true; title='{{venta.title}}', totalBruto='{{venta.total_bruto}}', totalNeto='{{venta.total}}', fecha='{{venta.fecha_corta}}', items=ventaItems, metodos=metodosPago, vidros=compraVidros"
+                     
+                                    
+                                    type="button" class="text-gray-800 cursor-pointer whitespace-nowrap rounded text-center text-sm font-medium tracking-wide transition hover:opacity-75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700 active:opacity-100 active:outline-offset-0 dark:bg-sky-600 dark:text-white dark:focus-visible:outline-sky-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+                                          </svg>
+                                    </button>
+                                    
+                                </div>
+                                
+                            </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+    </table>
+</div>

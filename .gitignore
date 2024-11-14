@@ -1,0 +1,12 @@
+.env
+.env.dev
+.env.prod
+.env.database
+__pycache__
+db.sqlite
+staticfiles
+node_modules
+media
+venv
+.venv
+

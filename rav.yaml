@@ -1,0 +1,19 @@
+rav:
+  dev: docker compose up
+  dev-down: docker compose down
+
+  stage: docker compose -f docker-compose.stage.yml
+
+
+  web: docker exec -it guarana-web-1 bash
+  createsuperuser: docker exec -it guarana-web-1 python manage.py createsuperuser
+  makemigrations: docker exec -it guarana-web-1 python manage.py makemigrations
+  migrate: docker exec -it guarana-web-1 python manage.py migrate
+  seeder: docker exec -it guarana-web-1 python manage.py seeder
+  flush: docker exec -it guarana-web-1 python manage.py flush
+  db: docker exec -it guarana-db-1 bash
+  collect: docker exec -it guarana-web-1 python manage.py collectstatic
+
+  build:
+    - cd project
+    - docker build -f Dockerfile.prod . -t 

@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[x-cloak], .d-none  {
+    display: none;
+}
+
+
+.errorlist.nonform {
+    margin-block: 0.3rem;
+    color: rgb(220 38 38);
+}

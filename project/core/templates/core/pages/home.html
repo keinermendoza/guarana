@@ -1,0 +1,34 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Pagina Principal{% endblock title %}
+
+{% block script %}
+{% endblock script %}
+
+
+{% block main %}
+
+{% include "core/partials/home/hero.html" %}
+
+{% include "core/partials/home/services_wrapper.html" %}
+
+
+{% include "core/partials/home/projects_alternative.html" with projects=projects %}
+{% include "core/partials/home/testimonials.html" with testimonials=testimonials %}
+{% include "core/partials/home/contact.html" %}
+{% comment %} {% include "core/partials/home/posts.html" with posts=posts %} {% endcomment %}
+
+{% endblock main %}
+
+
+
+{% block footer_nav_this_page %}
+<li><a class="hover:text-white cursor-pointer hover:underline underline-offset-4" href="#hero">Inicio</a></li>
+<li><a class="hover:text-white cursor-pointer hover:underline underline-offset-4" href="#proyectos">Proyectos</a></li>
+<li><a class="hover:text-white cursor-pointer hover:underline underline-offset-4" href="#clientes">Referencias</a></li>
+<li><a class="hover:text-white cursor-pointer hover:underline underline-offset-4" href="#contacto">Contactame</a></li>
+{% comment %} <li><a class="hover:text-white cursor-pointer hover:underline underline-offset-4" href="#posts">Publicaciones</a></li> {% endcomment %}
+
+{% endblock footer_nav_this_page %}
+    
