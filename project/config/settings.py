@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'django_cotton',
     'django_htmx',
     'django_user_agents',
+    'django_vite',
 
     'core',
     'api',
@@ -199,6 +200,12 @@ MEDIA_ROOT = BASE_DIR / 'media/'
 STATICFILES_DIRS = [
     BASE_DIR / 'staticfiles'
 ]
+
+DJANGO_VITE = {
+    "default": {
+        "dev_mode": True
+    }
+}
 
 
 # Email

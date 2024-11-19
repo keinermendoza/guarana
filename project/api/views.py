@@ -20,6 +20,8 @@ class ProductionApiView(APIView):
 
         year = self.request.query_params.get('year', tz.now().year)
         month = self.request.query_params.get('month', tz.now().month)
+        year = 2024
+        month = 8
 
         
         # produccion_query = Produccion.objects.filter(ralada__fecha_ralada__month=month, ralada__fecha_ralada__year=year)
@@ -28,10 +30,10 @@ class ProductionApiView(APIView):
         productos_elaborados = Producto.objects.produccion_al_mes_progress_chart(year=year, month=month)
         response = {
                 # "table_context":produccion_serializer.data,
-                "main_graphic_bar_title": "Vendas Diarias Segum Metodo de Pago",
-                "kpi": procesamiento,
-                "progress_section_title":"Produtos Produzidos No Mes",
-                "progress": productos_elaborados,
-            },
+                # "main_graphic_bar_title": "Vendas Diarias Segum Metodo de Pago",
+                "title":"Produtos Produzidos No Mes",
+                "total_by_category": procesamiento,
+                "total_by_product": productos_elaborados,
+            }
     
         return Response(response, status=status.HTTP_200_OK)
