@@ -1,6 +1,6 @@
 {% extends 'unfold/layouts/base_simple.html' %}
 
-{% load i18n custom_unfold static %}
+{% load i18n custom_unfold django_vite static %}
 
 {% block breadcrumbs %}{% endblock %}
 
@@ -17,10 +17,9 @@
 {% endblock %}
 
 {% block extrahead %}
-<script src="{% static 'admin/js/reload_charts.js' %}"></script>
-<script src="{% static 'admin/js/alpine_focus_plugin.min.js' %}"></script>
+{% comment %} <link rel="stylesheet" href="{% static 'css/tailwind.css' %}"> {% endcomment %}
+{% vite_hmr_client %}
 
-<link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 
     {% if plausible_domain %}
         <script defer data-domain="{{ plausible_domain }}" src="https://plausible.io/js/script.js"></script>
@@ -29,10 +28,8 @@
 
 {% block content %}
     {% include "unfold/helpers/messages.html" %}
-    
-    <div class="my-5">
-        <div hx-get={% url 'admin:vendas' %} hx-swap="outerHTML transition:true" hx-trigger="load"></div>
-    </div>
-  
-   
+
+
+    {% include "admin/react/reactAdmin.html" %}
+
 {% endblock %}

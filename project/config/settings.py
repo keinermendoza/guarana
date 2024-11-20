@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'django_cotton',
     'django_htmx',
     'django_user_agents',
+    'django_vite',
 
     'core',
     'api',
@@ -200,6 +201,11 @@ STATICFILES_DIRS = [
     BASE_DIR / 'staticfiles'
 ]
 
+DJANGO_VITE = {
+    "default": {
+        "dev_mode": DEBUG
+    }
+}
 
 # Email
 # EMAIL_HOST = os.environ.get('EMAIL_HOST')
@@ -207,9 +213,6 @@ STATICFILES_DIRS = [
 # EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 # EMAIL_PORT = int(os.environ.get('EMAIL_PORT'))
 # EMAIL_USE_TLS = bool(os.environ.get('EMAIL_USE_TLS'))
-
-# Celery
-# CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq:5672/'
 
 # # Url
 ROOT_URLCONF = os.environ.get('ROOT_URLCONF', 'config.urls')

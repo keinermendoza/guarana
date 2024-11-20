@@ -35,7 +35,7 @@ class VentaQueryset(models.QuerySet):
             produccion.append({
                 "title":metodo,
                 "metric":f"R$ {item['total_ventas']}",
-                "footer": mark_safe(f'<strong class="text-green-600 font-medium">{footer}</strong>')
+                "footer": footer,
             })
         return produccion
 
@@ -86,7 +86,8 @@ class VentaQueryset(models.QuerySet):
         fechas_ordenadas = sorted(fechas_set)
         for fecha in fechas_ordenadas:
             for metodo in ventas_por_metodo[fecha]:
-                metodos[metodo]["data"].append([0, ventas_por_metodo[fecha][metodo]])
+                # metodos[metodo]["data"].append([0, ventas_por_metodo[fecha][metodo]])
+                metodos[metodo]["data"].append(ventas_por_metodo[fecha][metodo])
 
         # formating data for bar chart
         datasets = []
@@ -98,12 +99,16 @@ class VentaQueryset(models.QuerySet):
                 "label": metodo["nombre"],
                 "data":metodo["data"],
                 "borderRdius":5,
-                "barThickness": 5,
+                # "barThickness": 5,
                 "backgroundColor":background_colors[index],
             })
-        dates = list(map(lambda d: d.strftime('%d/%m'), fechas_ordenadas))
-        datasets.append(dates) # this must be pop in the view
-        return datasets
+        
+        sales_by_method = {
+            "datasets": datasets,     
+            "labels": list(map(lambda d: d.strftime('%d/%m'), fechas_ordenadas)) 
+        }
+         # this must be pop in the view
+        return sales_by_method
 
 class VentaItemQueryset(models.QuerySet):
     def grafico_bar_montos_productos_vendidos_mensual(
@@ -253,6 +258,6 @@ class RaladaQueryset(models.QuerySet):
             produccion.append({
                 "title":item["nombre"].title(),
                 "metric":f"{item['total_bastones']} Bastões Procesados",
-                "footer": mark_safe(f'<strong class="text-green-600 font-medium">Tem se proccesado {item["total_peso"]} kg do {item["nombre"]} neste Mes</strong>')
+                "footer": f"Tem se proccesado {item['total_peso']} kg do {item['nombre']}"
             })
         return produccion
