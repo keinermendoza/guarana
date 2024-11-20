@@ -16,8 +16,8 @@ const getAPIEndpoint = () => {
 module.exports = {
     entry: {
         vendor: './src/vendor.js',
-        admin: './src/admin.js',
-        reactAdmin: './src/reactAdmin.js',
+        // admin: './src/admin.js',
+        // reactAdmin: './src/reactAdmin.js',
         // blog: './src/blog.js',
         // editor_react: './src/react/editor_app.jsx',
     },
@@ -27,16 +27,16 @@ module.exports = {
     },
     module: {
         rules: [
-            {
-                test: /\.(js|jsx)$/,
-                exclude: /node_modules/,
-                use: {
-                    loader: 'babel-loader',
-                    options: {
-                    presets: ['@babel/preset-env', '@babel/preset-react']
-                    }
-                }
-            },
+            // {
+            //     test: /\.(js|jsx)$/,
+            //     exclude: /node_modules/,
+            //     use: {
+            //         loader: 'babel-loader',
+            //         options: {
+            //         presets: ['@babel/preset-env', '@babel/preset-react']
+            //         }
+            //     }
+            // },
             {
                 test: /\.css$/i,
                 use: [
@@ -56,12 +56,12 @@ module.exports = {
         })
       ],
     resolve: {
-        extensions: ['.js', '.jsx'],
-        modules: ['reactAdmin', 'node_modules']
+        // extensions: ['.js', '.jsx'],
+        modules: ['node_modules']
     },
-    devServer: {
-        contentBase: path.join(__dirname, 'dist'),
-        compress: true,
-        port: 9000
-    }
+    // devServer: {
+    //     contentBase: path.join(__dirname, 'dist'),
+    //     compress: true,
+    //     port: 9000
+    // }
 }

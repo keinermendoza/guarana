@@ -9,6 +9,9 @@ module.exports = {
     "./src/**/*.{js,jsx}",
     "./src/react/**/*.{js,jsx}",
 
+    "../admin_index/src/**/*.{js,jsx}",
+
+
   ],
   theme: {
     extend: {

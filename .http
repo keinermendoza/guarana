@@ -1,0 +1,17 @@
+## GET available years
+
+http://127.0.0.1:8000/api/available-years/
+
+
+## GET available months error message 404
+###
+http://127.0.0.1:8000/api/available-months/
+
+## GET available months list 
+###
+http://127.0.0.1:8000/api/available-months/?year=2024
+
+
+## GET sales without providing month or year 
+###
+http://127.0.0.1:8000/api/sales/
