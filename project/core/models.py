@@ -1,3 +1,4 @@
+from typing import List
 import calendar
 import datetime
 from typing import Collection, Iterable
@@ -111,6 +112,7 @@ class Producto(models.Model):
     def __str__(self) -> str:
         return self.nombre
 
+    
     class Meta:
         verbose_name = "ModelName"
         verbose_name_plural = "ModelNames"
@@ -127,6 +129,22 @@ class Venta(models.Model):
 
     objects = VentaQueryset.as_manager()
 
+    @staticmethod
+    def get_available_years() -> List[int]:
+        return Venta.objects.annotate(year=models.F('fecha_venta__year')).values_list('year', flat=True).distinct().order_by('year')
+
+    @staticmethod
+    def get_available_months(year) -> List[int]:
+        return Venta.objects.filter(fecha_venta__year=year).annotate(month=models.F('fecha_venta__month')).values_list('month', flat=True).distinct().order_by('month')
+
+    @staticmethod
+    def get_proxied_grafico_bar_montos_productos_vendidos_mensual(start, end):
+        return VentaItem.objects.grafico_bar_montos_productos_vendidos_mensual(start=start, end=end)
+
+    @staticmethod
+    def get_proxied_cantidad_vendida_progress_chart(start, end):
+        return Producto.objects.cantidad_vendida_progress_chart(start=start, end=end)
+    
     class Meta:
         verbose_name = "Venta"
         verbose_name_plural = "Ventas"

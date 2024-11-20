@@ -203,10 +203,9 @@ STATICFILES_DIRS = [
 
 DJANGO_VITE = {
     "default": {
-        "dev_mode": True
+        "dev_mode": DEBUG
     }
 }
-
 
 # Email
 # EMAIL_HOST = os.environ.get('EMAIL_HOST')
@@ -214,9 +213,6 @@ DJANGO_VITE = {
 # EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 # EMAIL_PORT = int(os.environ.get('EMAIL_PORT'))
 # EMAIL_USE_TLS = bool(os.environ.get('EMAIL_USE_TLS'))
-
-# Celery
-# CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq:5672/'
 
 # # Url
 ROOT_URLCONF = os.environ.get('ROOT_URLCONF', 'config.urls')
