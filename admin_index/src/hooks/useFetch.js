@@ -12,7 +12,12 @@ export default function useFetch(url) {
             try {
                 setLoading(true);
                 setError('');
-                const resp = await fetch(url, controller);
+                const resp = await fetch(url, controller, {
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    signal: controller.signal,
+                });
                 if (!resp.ok) {throw new Error('Teve um erro')}
                 
                 const Data = await resp.json();

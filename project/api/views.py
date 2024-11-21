@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAdminUser
 from django.utils import timezone as tz
 
 from core.models import (
@@ -21,7 +21,7 @@ from .utils import (
 )
 
 class ProductionApiView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
     def get(self, request, *args, **kwargs):
 
         year = self.request.query_params.get('year', tz.now().year)
@@ -40,7 +40,7 @@ class ProductionApiView(APIView):
 
     
 class SalesApiView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
     def get(self, request, *args, **kwargs):
 
         year = self.request.query_params.get('year', tz.now().year)
@@ -119,14 +119,14 @@ class SalesApiView(APIView):
     # )
 
 class AvailableYearsApiView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
     def get(self, request, *args, **kwargs):
         
         return Response({'years':Venta.get_available_years()}, status=status.HTTP_200_OK)
     
 
 class AvailableMonthsApiView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
 
     def get(self, request, *args, **kwargs):
         if year := self.request.query_params.get('year'):
